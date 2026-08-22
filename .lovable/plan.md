@@ -5,28 +5,30 @@ Implement a complete execution log system to track the entire search flow from t
 ## User Review Required
 
 > [!IMPORTANT]
-> The admin logs page will be accessible at `/admin/logs`. It will be nested under the `_authenticated` layout to ensure only logged-in users can access it. If a specific admin role is required, please confirm.
+> The admin logs page will be accessible at `/admin/logs`. It will be nested under the `_authenticated` layout to ensure only logged-in users can access it.
 
 ## Proposed Changes
 
 ### Database Layer
-- Create `scan_logs` table in Supabase.
-- Fields: `id`, `search_id`, `event_type`, `event_status`, `message`, `payload`, `error_message`, `created_at`.
+- Create `scan_logs` table in the database.
+- Fields: `id`, `search_id`, `event_type`, `event_status`, `message`, `payload`, `error_message`, `http_status`, `duration_ms`, `created_at`.
+- Types for `event_type`: `SEARCH_CREATED`, `N8N_REQUEST_SENT`, `N8N_RESPONSE_RECEIVED`, `N8N_TIMEOUT`, `N8N_ERROR`, `CALLBACK_RECEIVED`, `CALLBACK_VALIDATED`, `RESULTS_SAVED`, `RESULTS_FETCHED`, `FRONTEND_ERROR`, `SYSTEM_ERROR`.
+- Types for `event_status`: `started`, `success`, `failed`, `warning`.
 - Enable RLS and add policies for authenticated users.
 - Add `GRANT` permissions for `authenticated` and `service_role`.
 
 ### Server Functions & Logic
 - Create `src/lib/logs.functions.ts`:
-    - `logScanEvent`: Server function to persist logs to the database.
+    - `logScanEvent`: Server function to persist logs to the database with payload sanitization (removing secrets/tokens).
 - Create `src/lib/logs.server.ts`:
     - Server-side helper for logging (bypassing RLS for system events if needed).
 
 ### Frontend Instrumentation
 - **Search Flow (`src/lib/scraper.functions.ts` / `src/components/SearchPage.tsx`)**:
     - Log `SEARCH_CREATED` when a search starts.
-    - Log `WEBHOOK_REQUEST_SENT` before calling n8n.
-    - Log `WEBHOOK_RESPONSE_RECEIVED` on success.
-    - Log `WEBHOOK_ERROR` on failure.
+    - Log `N8N_REQUEST_SENT` before calling the n8n webhook.
+    - Log `N8N_RESPONSE_RECEIVED` on success (tracking `http_status` and `duration_ms`).
+    - Log `N8N_ERROR` or `N8N_TIMEOUT` on failure.
 - **Results View (`src/components/ResultsPage.tsx`)**:
     - Log `RESULTS_FETCHED` when the user views the results.
 
@@ -42,16 +44,17 @@ Implement a complete execution log system to track the entire search flow from t
     - Display a timeline of logs.
     - Filters: `searchId`, period, `event_type`, `event_status`.
     - Detailed view for JSON payloads and error messages.
-- Update `src/components/DashboardLayout.tsx` to include a link to the Logs page (visible to admins if role system exists).
+- Update `src/components/DashboardLayout.tsx` to include a link to the Logs page.
 
 ## Technical Details
 - **Log Table Schema**:
 ```sql
 CREATE TYPE public.scan_event_type AS ENUM (
   'SEARCH_CREATED', 
-  'WEBHOOK_REQUEST_SENT', 
-  'WEBHOOK_RESPONSE_RECEIVED', 
-  'WEBHOOK_ERROR', 
+  'N8N_REQUEST_SENT', 
+  'N8N_RESPONSE_RECEIVED', 
+  'N8N_TIMEOUT',
+  'N8N_ERROR', 
   'CALLBACK_RECEIVED', 
   'CALLBACK_VALIDATED', 
   'RESULTS_SAVED', 
@@ -75,7 +78,20 @@ CREATE TABLE public.scan_logs (
   message text,
   payload jsonb,
   error_message text,
+  http_status integer,
+  duration_ms integer,
   created_at timestamptz DEFAULT now()
 );
+
+-- GRANTs
+GRANT SELECT, INSERT ON public.scan_logs TO authenticated;
+GRANT ALL ON public.scan_logs TO service_role;
+
+-- RLS
+ALTER TABLE public.scan_logs ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Users can view their own search logs" ON public.scan_logs
+  FOR SELECT TO authenticated USING (
+    search_id IN (SELECT id FROM public.searches WHERE user_id = auth.uid())
+  );
 ```
-- **Real-time updates**: The admin logs page will use Supabase Realtime to show logs as they happen.
+- **Payload Sanitization**: Implementation will ensure `x-callback-secret`, `Authorization` headers, and other sensitive tokens are stripped before logging to `payload`.
