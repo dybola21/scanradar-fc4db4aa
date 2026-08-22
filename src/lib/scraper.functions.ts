@@ -210,7 +210,10 @@ export const startSearch = createServerFn({ method: "POST" })
       .select()
       .single();
 
-    if (searchError) throw searchError;
+    if (searchError) {
+      console.error("[Scraper] Database insert error:", searchError);
+      throw searchError;
+    }
 
     await serverLogScanEvent({
       searchId: searchRecord.id,
@@ -223,8 +226,6 @@ export const startSearch = createServerFn({ method: "POST" })
     try {
       const secret = settings.webhook_secret ? decrypt(settings.webhook_secret) : "";
       
-      console.log(`[Scraper] Starting search trigger for ${termo} in ${cidade}/${uf}. Target URL: ${settings.webhook_url}`);
-      
       const payload = { 
         requestType: "search",
         searchId: searchRecord.id,
@@ -233,17 +234,28 @@ export const startSearch = createServerFn({ method: "POST" })
         uf 
       };
 
+      const webhookHeaders = {
+        "Content-Type": "application/json",
+        "Accept": "application/json",
+        "X-Webhook-Secret": secret ? "[PRESENT]" : "[MISSING]",
+        "X-Idempotency-Key": searchRecord.id,
+      };
+
       await serverLogScanEvent({
         searchId: searchRecord.id,
         eventType: 'N8N_REQUEST_SENT',
         eventStatus: 'started',
-        message: `Disparando webhook n8n para ${termo} em ${cidade}/${uf}`,
-        payload: { url: settings.webhook_url, payload }
+        message: `Iniciando fetch para n8n: ${termo} em ${cidade}/${uf}`,
+        payload: { 
+          url: settings.webhook_url, 
+          payload,
+          headers: webhookHeaders,
+          timeout: "15s"
+        }
       });
 
       const startTime = Date.now();
       
-      // Call n8n with 15s timeout
       const response = await safeWebhookFetch(settings.webhook_url, {
         method: "POST",
         headers: {
@@ -256,8 +268,7 @@ export const startSearch = createServerFn({ method: "POST" })
       });
 
       const durationMs = Date.now() - startTime;
-      console.log(`[Scraper] Webhook response status: ${response.status}`);
-
+      
       let nextStatus = "delivery_unknown";
       let eventStatus: 'success' | 'failed' | 'warning' = 'success';
 
@@ -271,13 +282,19 @@ export const startSearch = createServerFn({ method: "POST" })
         eventStatus = 'warning';
       }
 
+      const responseText = await response.clone().text().catch(() => "N/A");
+
       await serverLogScanEvent({
         searchId: searchRecord.id,
         eventType: 'N8N_RESPONSE_RECEIVED',
         eventStatus: eventStatus,
         httpStatus: response.status,
         durationMs,
-        message: `n8n respondeu com status ${response.status}`
+        message: `n8n respondeu com status ${response.status}`,
+        payload: { 
+          responsePreview: responseText.slice(0, 500),
+          status: response.status 
+        }
       });
 
       await supabase
@@ -292,7 +309,7 @@ export const startSearch = createServerFn({ method: "POST" })
         repeated: false 
       };
     } catch (err: any) {
-      console.error("Webhook trigger error:", err);
+      console.error("[Scraper] Webhook execution error:", err);
       const isTimeout = err.name === 'AbortError' || err.message?.includes('timeout');
       const finalStatus = isTimeout ? "delivery_unknown" : "failed";
       
@@ -301,14 +318,15 @@ export const startSearch = createServerFn({ method: "POST" })
         eventType: isTimeout ? 'N8N_TIMEOUT' : 'N8N_ERROR',
         eventStatus: 'failed',
         errorMessage: String(err),
-        message: isTimeout ? 'Tempo limite esgotado ao chamar n8n' : 'Erro ao chamar webhook n8n'
+        message: isTimeout ? 'Tempo limite esgotado (15s) ao chamar n8n' : 'Erro técnico ao disparar webhook n8n',
+        payload: { errorName: err.name, errorMessage: err.message }
       });
 
       await supabase
         .from("searches")
         .update({ 
           status: finalStatus, 
-          error_message: isTimeout ? "O n8n não respondeu ao aceite inicial (timeout)." : String(err) 
+          error_message: isTimeout ? "O n8n não respondeu ao aceite inicial dentro de 15s (timeout)." : String(err) 
         })
         .eq("id", searchRecord.id);
 
