@@ -130,9 +130,10 @@ export const Route = createFileRoute('/api/public/start-search')({
               method: 'POST',
               headers: {
                 'Content-Type': 'application/json',
-                'X-Webhook-Secret': n8nWebhookSecret,
+                ...(n8nWebhookSecret ? { 'X-Webhook-Secret': n8nWebhookSecret } : {}),
                 'X-Idempotency-Key': searchId,
               },
+
               body: JSON.stringify(n8nPayload),
               redirect: 'manual',
             });
