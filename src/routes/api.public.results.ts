@@ -211,8 +211,14 @@ export const Route = createFileRoute('/api/public/results')({
             searchId,
             eventType: 'RESULTS_SAVED',
             eventStatus: 'success',
-            message: `Resultados salvos com sucesso: ${mappedLeads.length} leads processados`,
-            payload: { totalLeads, sheetName, sheetUrl }
+            message: `Resultados salvos com sucesso: ${savedCount} leads processados (${duplicateCount} duplicados removidos)`,
+            payload: { 
+              received_leads: inputLeads.length,
+              duplicate_removed: duplicateCount,
+              saved_leads: savedCount,
+              sheetName, 
+              sheetUrl 
+            }
           });
 
           console.log(`[Callback] Successfully processed results for searchId: ${searchId}`);
