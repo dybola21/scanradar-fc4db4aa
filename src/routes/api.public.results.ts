@@ -64,7 +64,7 @@ export const Route = createFileRoute('/api/public/results')({
             .from('searches')
             .select('user_id')
             .eq('id', searchId)
-            .single()
+            .maybeSingle()
 
           if (searchError || !search) {
             const errorMsg = 'Search not found';
