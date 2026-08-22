@@ -1,43 +1,57 @@
-# Plano de Correção: Integração n8n e Erro AbortError (v4)
+# Plano de Correção: Integração n8n e Erro AbortError (v5)
 
-## 1. Infraestrutura e Fluxo Assíncrono Idempotente
-- **Timeout**: Reduzir para 15s no servidor (aceite inicial), com o n8n em `Respond Immediately`.
-- **Idempotência**:
-    - `searchId` (UUID) único no banco.
-    - Header `X-Idempotency-Key` no envio.
-    - **Ajuste n8n**: O workflow deve consultar um armazenamento persistente (Data Table ou banco) para garantir que um `searchId` nunca seja reprocessado.
+## 1. Arquitetura de Comunicação e Idempotência
+- **Timeout**: Reduzir para 15s (aceite inicial), com n8n em `Respond Immediately`.
+- **Idempotência**: `searchId` (UUID) único no banco. O n8n deve persistir `searchId` no início e consultar se já foi processado (rejeitando duplicatas).
+- **Deduplicação de Leads**:
+    - `lead_key = place_id` (quando disponível).
+    - `lead_key = hash` dos dados normalizados (nome, endereço, telefone) como fallback.
+    - Restrição: `UNIQUE(search_id, lead_key)`. Nunca usar URL como identidade principal.
 
-## 2. Refatoração `startSearch` e Tratamento HTTP
+## 2. Refatoração `startSearch` e Estados
 - Criar registro como `queued`.
-- Classificação de retorno:
-    - `2xx` → `processing`.
-    - `401/403` → `failed` (Erro de autenticação).
-    - `4xx` (outros) → `failed` (Requisição rejeitada).
-    - `5xx` / Timeout / Conexão → `delivery_unknown`.
+- Classificação HTTP:
+    - `2xx` -> `processing`.
+    - `401/403` -> `failed`.
+    - Outros `4xx` -> `failed`.
+    - Timeout/Erro de conexão -> `delivery_unknown`.
+    - `5xx` -> `delivery_unknown` (recebimento inconclusivo).
+- **Reconciliação `delivery_unknown`**: Ação "Verificar processamento" na UI para consulta por `searchId` e reenvio controlado.
 
-## 3. Callback Robusto e Transacional (External Server Route)
-- **Endpoint**: `src/routes/api.public.results.ts` (Handler POST).
-- **Segurança**:
-    - **X-Callback-Secret**: Gerado por usuário/integração, armazenado criptografado no banco, enviado via header. Nunca exposto no frontend.
-    - Validação Zod e limite de tamanho (1MB).
-- **Transacionalidade (Supabase RPC)**:
-    - `upsert` de leads (chave: `search_id` + `place_id` ou `url`).
-    - Atualização de status para `completed` ou `failed` APÓS confirmação de gravação de todos os leads.
-- **Tratamento de Erros no n8n**: O workflow deve possuir ramificação de erro (ou Error Trigger) que notifique o callback com `status: "failed"` em caso de quebra interna.
+## 3. Callback Seguro e Transacional
+- **Endpoint**: Server Route `src/routes/api/public/results.ts` (POST).
+- **X-Callback-Secret**:
+    - Gerado pelo servidor por usuário/integração.
+    - Exibido **uma única vez** para o usuário configurá-lo no n8n.
+    - Armazenado criptografado e nunca retornado novamente pela API.
+    - Opção de rotação disponível.
+    - Enviado pelo n8n no **header**, nunca na URL ou corpo.
+- **Transação (Supabase RPC)**: `upsert` de leads e atualização de status (`completed`/`failed`) em operação atômica.
+- **Tratamento de Erro no n8n**: O workflow deve capturar falhas e notificar o callback:
+    ```json
+    {
+      "searchId": "...",
+      "status": "failed",
+      "errorCode": "WORKFLOW_FAILED",
+      "message": "Mensagem segura"
+    }
+    ```
+    Garantir que o `searchId` seja mantido/recuperado via persistência inicial no n8n.
 
-## 4. Acompanhamento em Tempo Real
-- **Supabase Realtime**: Habilitar replicação para `searches` e `leads`.
-- **Frontend**: Componente de resultados assina o canal filtrado por `searchId` com fallback de polling em caso de falha na conexão Realtime.
+## 4. Atualização em Tempo Real (Supabase Realtime)
+- Habilitar replicação para `searches` e `leads`.
+- RLS rígido por usuário.
+- Frontend:
+    - Assinatura filtrada por `searchId`.
+    - Remoção do canal no `unmount`.
+    - Fallback de polling inteligente (apenas se Realtime falhar).
+    - Encerrar polling em estados terminais (`completed`/`failed`).
 
-## 5. UI e Feedback
-- Toasts: "Busca iniciada e sendo processada."
-- Bloqueio de duplo clique no botão de busca.
-- Erros amigáveis: Substituir `AbortError` por "Não foi possível confirmar o recebimento. Verifique o histórico...".
+## 5. UI e Validação
+- Toasts informativos sobre o processamento assíncrono.
+- Bloqueio de duplo clique.
+- Substituir `AbortError` por mensagem amigável de verificação.
 
-## 6. Validação e Testes
-- **Teste de Ponta a Ponta (Obrigatório)**: Validar aceite imediato, gravação na planilha, callback de sucesso/erro e atualização da UI via Realtime.
-- Logs: `searchId`, `requestType`, status HTTP, duração (sem segredos ou PII).
-
-- Implementar um "Teste de Ponta a Ponta" opcional para validar todo o ciclo (envio + callback).
-
-
+## 6. Testes e Auditoria
+- **Teste de Ponta a Ponta (OBRIGATÓRIO)**: Ciclo completo (envio -> n8n -> callback -> realtime UI) antes da publicação.
+- Logs: `searchId`, `requestType`, status HTTP e duração (sem PII ou segredos).
