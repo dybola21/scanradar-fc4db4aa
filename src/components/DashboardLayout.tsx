@@ -37,6 +37,7 @@ const navItems = [
   { label: "Dashboard", icon: LayoutDashboard, to: "/dashboard" },
   { label: "Nova busca", icon: Search, to: "/search" },
   { label: "Histórico", icon: History, to: "/history" },
+  { label: "Logs Técnicos", icon: Activity, to: "/admin/logs" },
   { label: "Configurações", icon: Settings, to: "/settings" },
 ] as const;
 
