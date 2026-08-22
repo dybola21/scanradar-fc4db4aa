@@ -128,9 +128,14 @@ export async function safeWebhookFetch(url: string, options: RequestInit = {}): 
   try {
     const response = await fetch(url, {
       ...options,
-      redirect: 'error', // Block automatic redirects
+      redirect: 'manual', // Use 'manual' instead of 'error' for edge compatibility; check status below
       signal: controller.signal,
     });
+    
+    // Strict redirect blocking for SSRF protection
+    if (response.status >= 300 && response.status < 400) {
+      throw new Error('Redirecionamentos não são permitidos por segurança.');
+    }
 
     // Check content length to avoid decompression bombs or huge responses
     const contentLength = response.headers.get('content-length');
