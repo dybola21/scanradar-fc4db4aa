@@ -81,36 +81,46 @@ export default function AuthPage() {
   return (
     <div className="flex min-h-dvh w-full overflow-hidden bg-[#07111F]">
       {/* Left side: Hero & Radar (Hidden on mobile) */}
-      <div className="relative hidden w-[55%] flex-col items-center justify-center border-r border-[#263750] p-12 lg:flex">
+      <div className="relative hidden w-[55%] flex-col border-r border-[#263750] bg-[#07111F] p-8 lg:flex lg:px-12 lg:py-10">
         <div className="absolute inset-0 z-0 opacity-20">
-           {/* Abstract grid lines for map feel */}
-           <div className="absolute inset-0 bg-[linear-gradient(rgba(56,189,248,0.1)_1px,transparent_1px),linear-gradient(90deg,rgba(56,189,248,0.1)_1px,transparent_1px)] bg-[size:60px_60px]" />
+          {/* Abstract grid lines for map feel */}
+          <div className="absolute inset-0 bg-[linear-gradient(rgba(56,189,248,0.1)_1px,transparent_1px),linear-gradient(90deg,rgba(56,189,248,0.1)_1px,transparent_1px)] bg-[size:60px_60px]" />
         </div>
-        
-        <div className="relative z-10 flex w-full max-w-[580px] flex-col items-center text-center">
-          <div className="mb-0">
-            <AnimatedRadarScene size={480} />
+
+        <div className="relative z-10 mx-auto flex h-full w-full max-w-[600px] flex-col">
+          {/* Logo at the top left of the container */}
+          <div className="mb-8 flex items-center gap-3 lg:mb-12">
+            <div className="grid h-9 w-9 place-items-center rounded-xl bg-[#0369A1]">
+              <AnimatedRadarLogo size={24} />
+            </div>
+            <span className="text-[24px] font-semibold tracking-tight text-[#F6F8FB]">ScanRadar</span>
           </div>
-          
-          <div className="space-y-6">
-            <h2 className="text-4xl font-bold tracking-tight text-[#F6F8FB] lg:text-5xl">
-              Encontre empresas antes que a oportunidade passe.
-            </h2>
-            <p className="text-lg text-[#9FB1C7]">
-              Mapeie negócios locais, identifique presença digital e transforme dados públicos em prospecção organizada.
-            </p>
-            
-            <div className="flex flex-col items-center gap-3 pt-4">
-              {[
-                "Busca por nicho e localização",
-                "Classificação de presença digital",
-                "Resultados prontos para ação"
-              ].map((benefit, i) => (
-                <div key={i} className="flex items-center gap-2 text-[#F6F8FB]/80 text-sm">
-                  <CheckCircle2 className="h-4 w-4 text-[#22C55E]" />
-                  <span>{benefit}</span>
-                </div>
-              ))}
+
+          <div className="flex flex-1 flex-col items-center justify-center py-2 lg:py-4">
+            <div className="mb-2 lg:mb-4">
+              <AnimatedRadarScene size={360} />
+            </div>
+
+            <div className="max-w-[580px] space-y-3 text-center lg:space-y-5">
+              <h2 className="text-3xl font-bold tracking-tight text-[#F6F8FB] lg:text-5xl">
+                Encontre empresas antes que a oportunidade passe.
+              </h2>
+              <p className="text-base text-[#9FB1C7] lg:text-lg">
+                Mapeie negócios locais, identifique presença digital e transforme dados públicos em prospecção organizada.
+              </p>
+
+              <div className="flex flex-col items-center gap-2 pt-2 lg:gap-3 lg:pt-3">
+                {[
+                  "Busca por nicho e localização",
+                  "Classificação de presença digital",
+                  "Resultados prontos para ação"
+                ].map((benefit, i) => (
+                  <div key={i} className="flex items-center gap-2 text-xs text-[#F6F8FB]/80 lg:text-sm">
+                    <CheckCircle2 className="h-4 w-4 text-[#22C55E]" />
+                    <span>{benefit}</span>
+                  </div>
+                ))}
+              </div>
             </div>
           </div>
         </div>
@@ -118,29 +128,29 @@ export default function AuthPage() {
 
       {/* Right side: Auth Form */}
       <div className="flex w-full flex-col items-center justify-center bg-[#F5F7FA] p-6 lg:w-[45%] lg:p-12">
+        {/* Mobile Logo and Hero (Only visible on small screens) */}
+        <div className="mb-8 flex flex-col items-center lg:hidden">
+          <div className="mb-8 flex items-center gap-3">
+            <div className="grid h-9 w-9 place-items-center rounded-xl bg-[#0369A1]">
+              <AnimatedRadarLogo size={24} />
+            </div>
+            <span className="text-2xl font-semibold tracking-tight text-[#0B1220]">ScanRadar</span>
+          </div>
+          
+          <div className="mb-6 flex justify-center">
+            <AnimatedRadarScene size={240} />
+          </div>
+          <h2 className="mb-2 text-2xl font-bold text-[#0B1220]">
+            Encontre empresas agora.
+          </h2>
+          <p className="mb-4 text-center text-sm text-[#526174]">
+            Transforme dados do Google Maps em leads qualificados.
+          </p>
+        </div>
+
         <div className="w-full max-w-[440px]">
           {/* Header section aligned in column */}
           <div className="mb-4 flex flex-col items-center lg:items-start">
-            <div className="mb-8 flex items-center gap-2">
-              <div className="grid h-10 w-10 place-items-center rounded-xl bg-[#0369A1]">
-                <AnimatedRadarLogo size={28} />
-              </div>
-              <span className="text-2xl font-bold tracking-tight text-[#0B1220]">ScanRadar</span>
-            </div>
-            
-            {/* Mobile Hero (Only visible on small screens) */}
-            <div className="block text-center lg:hidden">
-              <div className="mb-6 flex justify-center">
-                <AnimatedRadarScene size={240} />
-              </div>
-              <h2 className="mb-2 text-2xl font-bold text-[#0B1220]">
-                Encontre empresas agora.
-              </h2>
-              <p className="mb-8 text-sm text-[#526174]">
-                Transforme dados do Google Maps em leads qualificados.
-              </p>
-            </div>
-
             <h1 className="text-3xl font-bold tracking-tight text-[#0B1220]">
               {isSignUp ? "Crie sua conta" : "Bem-vindo de volta"}
             </h1>
