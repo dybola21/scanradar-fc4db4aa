@@ -1,36 +1,38 @@
-# Plano de Correção: Integração n8n e Erro AbortError
+# Plano de Correção: Integração n8n e Erro AbortError (v2)
 
-Investigação inicial indica que o erro `AbortError` é causado por um timeout fixo de 10 segundos no servidor (`src/lib/server/webhook-security.ts`), que entra em conflito com o tempo de resposta do n8n. Além disso, o fluxo atual é síncrono, fazendo com que o frontend aguarde a extração completa, o que é instável.
+Após auditoria técnica, identifiquei:
+- **Response Mode Atual**: Síncrono (aguarda extração completa no corpo da resposta).
+- **Localização do Timeout**: `src/lib/server/webhook-security.ts:126` (10 segundos).
+- **Retorno de Resultados**: Diretamente no corpo da resposta HTTP da Server Function.
 
-## Alterações Técnicas
+## 1. Infraestrutura de Rede e Segurança
+- **Timeout**: Aumentar para 30s no servidor para garantir a entrega do comando, mas orientar o n8n a responder imediatamente.
+- **Auditoria**: Adicionar logs server-side contendo `searchId`, `requestType`, duração e status HTTP, sem vazar segredos.
+- **SSRF**: Manter proteção com `safeWebhookFetch`.
 
-### 1. Segurança e Infraestrutura de Rede (`src/lib/server/webhook-security.ts`)
-- Aumentar o timeout do `safeWebhookFetch` para 30 segundos (limite seguro para Cloudflare Workers/Edge).
-- Garantir que o `AbortController` seja descartado corretamente.
-- Adicionar suporte a `requestType` e logs de auditoria (sem expor dados sensíveis).
+## 2. Fluxo de Busca Assíncrona e Idempotência
+- **Banco de Dados**: Atualizar a restrição da tabela `searches` para incluir os status `queued` e `delivery_unknown`.
+- **Idempotência**: Garantir que o `searchId` (UUID) seja usado como chave de idempotência no envio ao n8n via header `X-Idempotency-Key`.
+- **Refatoração `startSearch`**:
+    1. Criar registro como `queued`.
+    2. Enviar para o n8n e aguardar apenas o aceite (HTTP 2xx).
+    3. Se aceito, mudar para `processing` e retornar ao frontend.
+    4. Se houver timeout/erro de rede após o envio, mudar para `delivery_unknown`.
 
-### 2. Fluxo de Busca Assíncrona (`src/lib/scraper.functions.ts`)
-- **Mudança de Paradigma**: A Server Function `startSearch` passará a ser assíncrona. Ela criará o registro, enviará o comando ao n8n e retornará uma confirmação de "processando" imediatamente após o n8n aceitar a carga (HTTP 200/202).
-- **Idempotência**: Implementar verificação rigorosa por `searchId` para evitar duplicidade.
-- **Status Progressivos**: Adicionar `delivery_unknown` para tratar casos onde o timeout ocorre mas o n8n pode ter recebido a ordem.
+## 3. Entrega de Resultados (Callback)
+- **Novo Endpoint**: Criar `src/routes/api.public.results.ts` (Webhook de Callback).
+- **Segurança**: Protegido por um segredo de callback exclusivo (recuperado no servidor) e validação de schema Zod.
+- **Processamento**: O endpoint receberá os leads do n8n, salvará na tabela `leads` e marcará a busca como `completed`.
 
-### 3. Melhoria no Teste de Conexão (`src/lib/scraper.functions.ts`)
-- Isolar o `AbortController` do teste.
-- Aceitar respostas vazias e status 202 (Accepted).
-- Implementar mensagens de erro amigáveis substituindo o termo técnico "AbortError".
+## 4. Teste de Conexão e Refinamento de UI
+- **Teste**: Usar ramificação curta no n8n (sem extração) e aceitar qualquer resposta 2xx.
+- **UI**: 
+    - Substituir `AbortError` por mensagens amigáveis ("Não foi possível confirmar o recebimento...").
+    - Bloquear duplo clique durante o envio.
+    - Notificar "Busca iniciada e sendo processada" após o aceite do webhook.
 
-### 4. Interface e Feedback (`src/components/SearchPage.tsx` e `SettingsPage.tsx`)
-- Ajustar toasts para refletir o sucesso da *inicialização* da busca, não da conclusão imediata.
-- Bloquear envios duplicados no cliente.
+## 5. Ajustes no n8n (Manual pelo Usuário)
+- Configurar o nó Webhook para `Response Mode: Respond Immediately`.
+- Implementar ramificação para `requestType: "connection_test"`.
+- Enviar os resultados para o novo endpoint de callback ao finalizar.
 
-### 5. Novo Endpoint de Callback (Opcional, mas recomendado)
-- Criar `src/routes/api/public/callback.ts` para que o n8n possa notificar o ScanRadar quando a extração terminar, garantindo que o status mude para `completed` mesmo que o usuário feche o navegador.
-
-## Detalhes Técnicos
-- **Timeout**: 30s no servidor para evitar interrupções prematuras.
-- **Protocolo**: Envio de `requestType: "search"` ou `"connection_test"`.
-- **URL**: Forçar o uso de URLs de produção (`/webhook/`).
-
-## Auditoria e Logs
-- Adição de logs server-side contendo apenas meta-dados da requisição (searchId, duração, status HTTP).
-- Remoção de qualquer log que possa vazar o `X-Webhook-Secret`.
