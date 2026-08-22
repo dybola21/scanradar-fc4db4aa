@@ -120,7 +120,7 @@ export default function AuthPage() {
       <div className="flex w-full flex-col items-center justify-center bg-[#F5F7FA] p-6 lg:w-[45%] lg:p-12">
         <div className="w-full max-w-[440px]">
           {/* Header section aligned in column */}
-          <div className="mb-6 flex flex-col items-center lg:items-start">
+          <div className="mb-4 flex flex-col items-center lg:items-start">
             <div className="mb-8 flex items-center gap-2">
               <div className="grid h-10 w-10 place-items-center rounded-xl bg-[#0369A1]">
                 <AnimatedRadarLogo size={28} />
