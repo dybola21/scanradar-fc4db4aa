@@ -130,15 +130,22 @@ export async function safeWebhookFetch(url: string, options: RequestInit = {}): 
 
   try {
     console.log(`[Webhook Security] Initiating safe fetch to: ${url}`);
+    
+    // Cloudflare Workers / Edge specific: ensure we don't have SSRF validation 
+    // blocking a valid production n8n instance if it resolves to a range 
+    // the runtime considers internal.
+    
     const response = await fetch(url, {
       ...options,
-      redirect: 'manual', // Use 'manual' instead of 'error' for edge compatibility; check status below
+      redirect: 'manual', 
       signal: controller.signal,
     });
+    
     console.log(`[Webhook Security] Received response from ${url}: Status ${response.status}`);
     
     // Strict redirect blocking for SSRF protection
     if (response.status >= 300 && response.status < 400) {
+      console.warn(`[Webhook Security] Blocked redirect at ${url} (Status ${response.status})`);
       throw new Error('Redirecionamentos não são permitidos por segurança.');
     }
 
