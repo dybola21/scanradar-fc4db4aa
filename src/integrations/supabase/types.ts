@@ -21,9 +21,11 @@ export type Database = {
           created_at: string
           email: string | null
           email2: string | null
+          endereco: string | null
           id: string
           lead_key: string | null
           nome: string | null
+          place_id: string | null
           search_id: string
           telefone: string | null
           uf: string | null
@@ -35,9 +37,11 @@ export type Database = {
           created_at?: string
           email?: string | null
           email2?: string | null
+          endereco?: string | null
           id?: string
           lead_key?: string | null
           nome?: string | null
+          place_id?: string | null
           search_id: string
           telefone?: string | null
           uf?: string | null
@@ -49,9 +53,11 @@ export type Database = {
           created_at?: string
           email?: string | null
           email2?: string | null
+          endereco?: string | null
           id?: string
           lead_key?: string | null
           nome?: string | null
+          place_id?: string | null
           search_id?: string
           telefone?: string | null
           uf?: string | null
