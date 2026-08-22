@@ -71,6 +71,40 @@ function AdminLogsPage() {
     refetchInterval: 5000,
   });
 
+  useEffect(() => {
+    const channel = supabase
+      .channel('admin-logs-realtime')
+      .on(
+        'postgres_changes',
+        { event: 'INSERT', schema: 'public', table: 'scan_logs' },
+        () => {
+          queryClient.invalidateQueries({ queryKey: ['admin-scan-logs'] });
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [queryClient]);
+
+  const handleClearLogs = async () => {
+    if (!confirm('Tem certeza que deseja apagar todos os logs? Esta ação não pode ser desfeita.')) return;
+    
+    try {
+      const { error } = await supabase
+        .from('scan_logs' as any)
+        .delete()
+        .neq('id', '00000000-0000-0000-0000-000000000000'); // Delete all
+      
+      if (error) throw error;
+      toast.success('Logs limpos com sucesso');
+      refetch();
+    } catch (err) {
+      toast.error('Erro ao limpar logs');
+    }
+  };
+
   const toggleExpand = (id: string) => {
     setExpandedLogs(prev => {
       const next = new Set(prev);
