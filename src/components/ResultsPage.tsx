@@ -43,6 +43,7 @@ export default function ResultsPage() {
   const queryClient = useQueryClient();
   const fetchDetails = useServerFn(getSearchDetails);
   const checkStatusFn = useServerFn(checkSearchStatus);
+  const logEventFn = useServerFn(logScanEvent);
 
   const [presenceFilter, setPresenceFilter] = useState("all");
   const [sortBy, setSortBy] = useState("opportunity");
