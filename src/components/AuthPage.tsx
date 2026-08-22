@@ -96,26 +96,26 @@ export default function AuthPage() {
             <span className="text-[24px] font-semibold tracking-tight text-[#F6F8FB]">ScanRadar</span>
           </div>
 
-          <div className="flex flex-1 flex-col items-center justify-center pb-12">
-            <div className="mb-4">
-              <AnimatedRadarScene size={440} />
+          <div className="flex flex-1 flex-col items-center justify-center py-4 lg:py-8">
+            <div className="mb-2 lg:mb-6">
+              <AnimatedRadarScene size={400} />
             </div>
 
-            <div className="max-w-[580px] space-y-5 text-center">
-              <h2 className="text-4xl font-bold tracking-tight text-[#F6F8FB] lg:text-5xl">
+            <div className="max-w-[580px] space-y-4 text-center lg:space-y-6">
+              <h2 className="text-3xl font-bold tracking-tight text-[#F6F8FB] lg:text-5xl">
                 Encontre empresas antes que a oportunidade passe.
               </h2>
-              <p className="text-lg text-[#9FB1C7]">
+              <p className="text-base text-[#9FB1C7] lg:text-lg">
                 Mapeie negócios locais, identifique presença digital e transforme dados públicos em prospecção organizada.
               </p>
 
-              <div className="flex flex-col items-center gap-3 pt-2">
+              <div className="flex flex-col items-center gap-2 pt-2 lg:gap-3 lg:pt-4">
                 {[
                   "Busca por nicho e localização",
                   "Classificação de presença digital",
                   "Resultados prontos para ação"
                 ].map((benefit, i) => (
-                  <div key={i} className="flex items-center gap-2 text-sm text-[#F6F8FB]/80">
+                  <div key={i} className="flex items-center gap-2 text-xs text-[#F6F8FB]/80 lg:text-sm">
                     <CheckCircle2 className="h-4 w-4 text-[#22C55E]" />
                     <span>{benefit}</span>
                   </div>
