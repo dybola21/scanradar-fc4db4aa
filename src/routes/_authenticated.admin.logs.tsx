@@ -25,6 +25,19 @@ export const Route = createFileRoute('/_authenticated/admin/logs')({
   component: AdminLogsPage,
 });
 
+interface ScanLog {
+  id: string;
+  search_id: string;
+  event_type: string;
+  event_status: 'success' | 'failed' | 'warning' | 'started';
+  message: string;
+  payload: any;
+  error_message: string | null;
+  http_status: number | null;
+  duration_ms: number | null;
+  created_at: string;
+}
+
 function AdminLogsPage() {
   const [searchFilter, setSearchFilter] = useState('');
   const [typeFilter, setTypeFilter] = useState<string>('all');
@@ -34,7 +47,7 @@ function AdminLogsPage() {
     queryKey: ['admin-scan-logs', searchFilter, typeFilter],
     queryFn: async () => {
       let query = supabase
-        .from('scan_logs')
+        .from('scan_logs' as any)
         .select('*')
         .order('created_at', { ascending: false })
         .limit(100);
@@ -48,7 +61,7 @@ function AdminLogsPage() {
 
       const { data, error } = await query;
       if (error) throw error;
-      return data;
+      return data as ScanLog[];
     },
     refetchInterval: 5000,
   });
@@ -88,11 +101,13 @@ function AdminLogsPage() {
 
   return (
     <div className="space-y-6">
-      <PageHeader 
-        title="Logs de Execução" 
-        eyebrow="Monitoramento em tempo real da integração"
-        icon={Terminal}
-      />
+      <div className="flex items-center gap-3">
+        <Terminal className="size-8 text-primary" />
+        <PageHeader 
+          title="Logs de Execução" 
+          description="Monitoramento em tempo real da integração técnica"
+        />
+      </div>
 
       <div className="flex flex-wrap gap-4 items-end bg-card p-4 rounded-xl border border-border shadow-sm">
         <div className="space-y-1.5 flex-1 min-w-[240px]">

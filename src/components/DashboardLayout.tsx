@@ -94,7 +94,8 @@ export default function DashboardLayout() {
           {navItems.map((item) => {
             const isActive =
               location.pathname === item.to ||
-              (item.to === "/history" && location.pathname.startsWith("/results"));
+              (item.to === "/history" && location.pathname.startsWith("/results")) ||
+              (item.to === "/admin/logs" && location.pathname.startsWith("/admin/logs"));
             const link = (
               <Link
                 key={item.to}
