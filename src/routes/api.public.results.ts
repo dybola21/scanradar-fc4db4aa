@@ -24,7 +24,13 @@ export const Route = createFileRoute('/api/public/results')({
             return jsonResponse({ success: false, error: 'Invalid JSON body' }, 400);
           }
 
-          const { searchId, status, totalLeads, leads, sheetName, sheetUrl, message } = body
+          let { searchId, status, totalLeads, leads, sheetName, sheetUrl, message } = body
+
+          // Sanitize searchId - common n8n mistake to include leading "="
+          if (typeof searchId === 'string' && searchId.startsWith('=')) {
+            console.log(`[Callback] Sanitizing searchId by removing leading '=': ${searchId}`);
+            searchId = searchId.substring(1);
+          }
 
           if (searchId) {
             await serverLogScanEvent({
