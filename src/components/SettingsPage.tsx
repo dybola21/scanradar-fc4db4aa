@@ -215,6 +215,58 @@ export default function Settings() {
           </div>
         </div>
 
+        <div className="space-y-4 border-t border-border pt-6">
+          <div className="space-y-2.5">
+            <Label className="text-sm font-semibold text-foreground">
+              Segredo de Callback (X-Callback-Secret)
+            </Label>
+            <div className="flex gap-2">
+              <div className="relative flex-1">
+                <Input
+                  type={callbackSecret ? "text" : "password"}
+                  readOnly
+                  value={callbackSecret || (settings?.has_callback_secret ? "••••••••••••••••" : "Nenhum segredo gerado")}
+                  className="h-12 rounded-xl pr-10"
+                />
+                {callbackSecret && (
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    onClick={copyCallback}
+                    className="absolute right-1 top-1 size-10 rounded-lg"
+                  >
+                    {copiedCallback ? <Check className="size-4" /> : <Copy className="size-4" />}
+                  </Button>
+                )}
+              </div>
+              <Button
+                type="button"
+                variant="outline"
+                className="h-12 rounded-xl"
+                onClick={() => updateMutation.mutate({
+                  webhook_url: webhookUrl,
+                  integration_name: settings?.integration_name || "n8n integration",
+                  rotate_callback_secret: true
+                })}
+                disabled={updateMutation.isPending}
+              >
+                {updateMutation.isPending ? <Loader2 className="mr-2 size-4 animate-spin" /> : null}
+                {settings?.has_callback_secret ? "Rotacionar" : "Gerar Segredo"}
+              </Button>
+            </div>
+            <div className="flex items-start gap-2 rounded-lg bg-primary/5 p-3 text-[12px] text-muted-foreground">
+              <Info className="mt-0.5 size-3.5 shrink-0 text-primary" />
+              <div className="space-y-1">
+                <p>Este segredo deve ser configurado no header <strong>X-Callback-Secret</strong> do seu callback no n8n.</p>
+                {callbackSecret && (
+                  <p className="font-semibold text-primary">Copie agora! Por segurança, este segredo não será exibido novamente.</p>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+
         <div className="flex flex-col gap-4 border-t border-border pt-6 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-center gap-2 text-xs text-muted-foreground">
             <ShieldCheck className="size-4 text-success" />
