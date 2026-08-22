@@ -207,7 +207,11 @@ export default function SearchPage() {
             >
               Limpar
             </Button>
-            <Button type="submit" className="min-h-11 rounded-xl px-6" disabled={isPending}>
+            <Button 
+              type="submit" 
+              className="min-h-11 rounded-xl px-6" 
+              disabled={isPending || !integration?.configured}
+            >
               {isPending ? <Loader2 className="size-4 animate-spin" /> : <Search className="size-4" />}
               {isPending ? "Buscando…" : "Iniciar busca"}
             </Button>

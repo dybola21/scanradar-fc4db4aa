@@ -207,10 +207,10 @@ export default function Dashboard() {
               <h2 className="truncate text-base font-semibold text-foreground">Oportunidades prioritárias</h2>
               <p className="text-xs text-muted-foreground">Empresas sem site próprio, ordenadas por potencial.</p>
             </div>
-            <Button asChild variant="ghost" size="sm" className="shrink-0 rounded-lg">
+            <Button asChild variant="ghost" size="sm" className="h-9 shrink-0 rounded-lg text-xs">
               <Link to="/history">
-                Ver buscas
-                <ArrowRight className="size-4" />
+                Ver tudo
+                <ArrowRight className="size-3.5" />
               </Link>
             </Button>
           </div>

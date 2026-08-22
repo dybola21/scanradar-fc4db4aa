@@ -206,17 +206,21 @@ export default function Settings() {
           </p>
         </div>
 
-        <div className="flex flex-col gap-3 border-t border-border pt-5 sm:flex-row sm:items-center sm:justify-between">
-          <p className="flex items-center gap-2 text-xs text-muted-foreground">
-            <ShieldCheck className="size-3.5 shrink-0" />
-            A chave fica armazenada apenas no backend, nunca no navegador.
-          </p>
-          <Button type="submit" className="min-h-11 rounded-xl px-6" disabled={updateMutation.isPending}>
-            {updateMutation.isPending ? <Loader2 className="size-4 animate-spin" /> : null}
-            Salvar configurações
-          </Button>
+          <div className="flex flex-col gap-3 border-t border-border pt-5 sm:flex-row sm:items-center sm:justify-between">
+            <p className="flex items-center gap-2 text-xs text-muted-foreground">
+              <ShieldCheck className="size-3.5 shrink-0" />
+              A chave fica armazenada com criptografia AES-256 no servidor.
+            </p>
+            <Button 
+              onClick={handleSave} 
+              className="min-h-11 rounded-xl px-6" 
+              disabled={updateMutation.isPending || !webhookUrl || (webhookUrl === settings?.webhook_url && !webhookSecret)}
+            >
+              {updateMutation.isPending ? <Loader2 className="size-4 animate-spin" /> : null}
+              Salvar configurações
+            </Button>
+          </div>
         </div>
-      </form>
     </div>
   );
 }
