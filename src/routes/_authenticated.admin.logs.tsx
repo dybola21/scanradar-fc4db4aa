@@ -140,12 +140,35 @@ function AdminLogsPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center gap-3">
-        <Terminal className="size-8 text-primary" />
-        <PageHeader 
-          title="Logs de Execução" 
-          description="Monitoramento em tempo real da integração técnica"
-        />
+      <div className="flex items-center justify-between gap-4">
+        <div className="flex items-center gap-3">
+          <Terminal className="size-8 text-primary" />
+          <PageHeader 
+            title="Logs de Execução" 
+            description="Monitoramento em tempo real da integração técnica"
+          />
+        </div>
+        <div className="flex items-center gap-2">
+          <Button 
+            variant="outline" 
+            size="sm" 
+            onClick={() => refetch()} 
+            disabled={isRefetching}
+            className="rounded-lg h-9"
+          >
+            <RefreshCw className={cn("size-3.5 mr-2", isRefetching && "animate-spin")} />
+            Atualizar
+          </Button>
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            onClick={handleClearLogs}
+            className="rounded-lg h-9 text-destructive hover:bg-destructive/5 hover:text-destructive"
+          >
+            <Trash2 className="size-3.5 mr-2" />
+            Limpar tudo
+          </Button>
+        </div>
       </div>
 
       <div className="flex flex-wrap gap-4 items-end bg-card p-4 rounded-xl border border-border shadow-sm">
