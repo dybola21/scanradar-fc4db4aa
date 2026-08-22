@@ -354,9 +354,10 @@ export const getSearchDetails = createServerFn({ method: "POST" })
       .select("*")
       .eq("id", searchId)
       .eq("user_id", userId)
-      .single();
+      .maybeSingle();
 
     if (searchError) throw searchError;
+    if (!search) throw new Error("Busca não encontrada");
 
     const { data: leads, error: leadsError } = await supabase
       .from("leads")
@@ -379,7 +380,7 @@ export const deleteSearch = createServerFn({ method: "POST" })
       .select("id")
       .eq("id", data.searchId)
       .eq("user_id", userId)
-      .single();
+      .maybeSingle();
 
     if (ownedError || !owned) throw new Error("Busca não encontrada");
 
