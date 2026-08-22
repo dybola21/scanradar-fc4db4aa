@@ -74,10 +74,13 @@ export const updateIntegrationSettings = createServerFn({ method: "POST" })
 
     const { error } = await supabase
       .from("n8n_settings")
-      .upsert({
-        user_id: userId,
-        ...updateData,
-      });
+      .upsert(
+        {
+          user_id: userId,
+          ...updateData,
+        },
+        { onConflict: 'user_id' }
+      );
 
     if (error) throw error;
     return { success: true };
