@@ -1,4 +1,4 @@
-import { createCipheriv, createDecipheriv, randomBytes, createHash } from 'crypto';
+import { createCipheriv, createDecipheriv, randomBytes, createHash, timingSafeEqual } from 'crypto';
 
 const ALGORITHM = 'aes-256-ctr';
 
@@ -33,3 +33,27 @@ export function decrypt(hash: string): string {
   const decrypted = Buffer.concat([decipher.update(encrypted), decipher.final()]);
   return decrypted.toString('utf8');
 }
+
+/**
+ * Generates a secure random secret for callback verification.
+ */
+export function generateCallbackSecret(): string {
+  return randomBytes(32).toString('hex');
+}
+
+/**
+ * Hashes a secret for secure storage.
+ */
+export function hashSecret(secret: string): string {
+  return createHash('sha256').update(secret).digest('hex');
+}
+
+/**
+ * Securely compares a secret with its stored hash.
+ */
+export function verifySecret(secret: string, hash: string): boolean {
+  if (!secret || !hash) return false;
+  const secretHash = hashSecret(secret);
+  return timingSafeEqual(Buffer.from(secretHash), Buffer.from(hash));
+}
+
