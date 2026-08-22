@@ -1,62 +1,60 @@
-# Plan: ScanRadar Login Refinement Stage 2
+# Plan: ScanRadar Login Refinement Stage 2 (Revised)
 
-Refine the login interface to improve contrast, layout, and visual sophistication while preserving existing authentication logic and core animations.
-
-## User Review Required
-
-> [!IMPORTANT]
-> - The layout will shift to a 55/45 split (Dark/Light).
-> - Colors are being updated to specific hex codes for better accessibility and professional look.
+Refine the login interface to improve contrast, layout, and visual sophistication while preserving existing authentication logic and core animations. This revision addresses technical concerns regarding global styles, component reuse, and accessibility.
 
 ## Proposed Changes
 
-### 1. Styling & Colors
-- Update `src/styles.css` with the new color palette:
-  - Background (Right): `#F5F7FA`
-  - Text (Right): `#0B1220` (Title), `#526174` (Secondary)
+### 1. Styling & Colors (Scoped)
+- Instead of global variables in `src/styles.css`, define specific color tokens within `src/components/AuthPage.tsx` using Tailwind's arbitrary values or local CSS modules to prevent side effects on the dashboard.
+- Palette:
+  - Right background: `#F5F7FA`
+  - Right Title: `#0B1220`
+  - Right Secondary text: `#526174`
   - Card: `#FFFFFF`
   - Inputs: `#F3F6FA`
   - Borders: `#D5DEE9`
-  - Left Side Text: `#F6F8FB`
-  - Left Side Subtitle: `#9FB1C7`
-  - Accent Blue: `#0284C7`
-  - Success Green: `#22C55E`
+  - Left Text: `#F6F8FB`
+  - Left Subtitle: `#9FB1C7`
+  - **Accent Blue: `#0369A1`** (Updated for WCAG AA compliance with white text)
+  - Success Green: `#22C55E` (Used only for points)
 
-### 2. Animated Radar Refinement
-- Update `src/components/AnimatedRadarLogo.tsx`:
-  - Increase the number of concentric circles and grid sophistication.
-  - Ensure only the scanning beam rotates.
-  - Fix the center origin of the rotation.
-  - Enhance the "blip" pulse effect for detected points.
+### 2. New Component: `AnimatedRadarScene.tsx`
+- Create a new component for the hero radar to avoid modifying the compact `AnimatedRadarLogo.tsx` used in sidebars.
+- Features:
+  - 5+ concentric circles, fine grid lines.
+  - Rotating scanning beam (centralized origin).
+  - Discrete pulsing points.
+  - Full support for `prefers-reduced-motion`.
 
 ### 3. Hero Section (Left Side - 55%)
 - Update `src/components/AuthPage.tsx`:
-  - Adjust width to 55% on desktop.
-  - Align content in a consistent container.
-  - Update Title: "Encontre empresas antes que a oportunidade passe." (Max-width 520-580px).
-  - Update Subtitle: "Mapeie negócios locais, identifique presença digital e transforme dados públicos em prospecção organizada."
-  - Add three benefit items:
+  - Split layout: 55% Dark (Left) / 45% Light (Right).
+  - Title: "Encontre empresas antes que a oportunidade passe." (Max-width: 520-580px, no manual breaks).
+  - Subtitle: "Mapeie negócios locais, identifique presença digital e transforme dados públicos em prospecção organizada."
+  - Add three benefit items with icons:
     - Busca por nicho e localização
     - Classificação de presença digital
     - Resultados prontos para ação
-  - Reduce vertical spacing between the radar and the text.
+  - Reduce vertical spacing between the radar and text.
 
 ### 4. Authentication Panel (Right Side - 45%)
 - Update `src/components/AuthPage.tsx`:
-  - Adjust width to 45% on desktop.
-  - Set background to `#F5F7FA`.
-  - Align logo, title, and form in a single column.
-  - Refine the Card: Max-width 440px, white background, soft border, and discrete shadow.
-  - Primary Button: Background `#0284C7`, white text, height 50px.
-  - Google Button: White background, dark text, visible border.
-  - Fix the "OR" divisor lines to not overlap the text.
+  - Background: `#F5F7FA`.
+  - Single column alignment for logo, header, and form.
+  - Card refinement: White, max-width 440px, soft border, discrete shadow.
+  - **Primary Button**: `#0369A1` background, white text, 50px height, clear states (hover, focus, disabled, loading).
+  - **Google Button**: White background, dark text, visible border, aligned icon.
+  - **Divisor**: Fix lines to stop before the text "ou continue com".
 
-### 5. Responsive Design
-- Ensure mobile layout (single column) features a compact radar at the top followed by the form.
-- Validate layout at 375, 768, 1024, and 1440px.
+### 5. Technical Validations & Accessibility
+- **WCAG AA**: Ensure contrast ratios for all text and interactive elements.
+- **Form States**: Implement visual feedback for loading, disabled, and errors.
+- **Preservation**: Keep all existing Supabase logic, email/Google login, password recovery, and sign-up flows.
+- **Navigation**: Verify keyboard accessibility (tab index, focus states).
+- **Responsive**: Compact radar for mobile, single column flow. Validate at 375px, 768px, 1024px, and 1440px.
 
 ## Technical Details
-- Using Tailwind CSS v4 custom properties for colors.
-- SVG animations for the radar.
-- Lucide icons for benefits and form UI.
-- Preservation of Supabase auth hooks and redirection logic.
+- Scoped CSS/Tailwind to `AuthPage.tsx`.
+- SVG-based `AnimatedRadarScene`.
+- Lucide React for iconography.
+- Framer Motion or CSS transitions for state changes.
