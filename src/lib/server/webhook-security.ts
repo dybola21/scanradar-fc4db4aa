@@ -71,8 +71,10 @@ function isPrivateIP(ip: string): boolean {
 export async function validateWebhookUrl(url: string): Promise<{ valid: boolean; error?: string }> {
   try {
     const parsed = new URL(url);
+    console.log(`[Webhook Security] Validating URL: ${url}`);
     
     if (parsed.protocol !== 'https:') {
+      console.warn(`[Webhook Security] Blocked non-HTTPS protocol: ${parsed.protocol}`);
       return { valid: false, error: 'Apenas URLs HTTPS são permitidas por segurança.' };
     }
 
@@ -88,20 +90,31 @@ export async function validateWebhookUrl(url: string): Promise<{ valid: boolean;
 
     // 2. Resolve hostname to IPs
     try {
-      const ipv4s = await resolve4(hostname).catch(() => []);
-      const ipv6s = await resolve6(hostname).catch(() => []);
+      console.log(`[Webhook Security] Resolving hostname: ${hostname}`);
+      const ipv4s = await resolve4(hostname).catch((err) => {
+        console.warn(`[Webhook Security] IPv4 resolution failed for ${hostname}:`, err.message);
+        return [];
+      });
+      const ipv6s = await resolve6(hostname).catch((err) => {
+        console.warn(`[Webhook Security] IPv6 resolution failed for ${hostname}:`, err.message);
+        return [];
+      });
       const allIps = [...ipv4s, ...ipv6s];
 
       if (allIps.length === 0) {
+        console.warn(`[Webhook Security] No IPs found for ${hostname}. Check DNS.`);
         return { valid: false, error: 'Não foi possível resolver o endereço do servidor.' };
       }
 
+      console.log(`[Webhook Security] Resolved IPs for ${hostname}:`, allIps);
       for (const ip of allIps) {
         if (isPrivateIP(ip)) {
+          console.error(`[Webhook Security] Blocked private IP: ${ip} for hostname: ${hostname}`);
           return { valid: false, error: 'O servidor resolve para um endereço de rede privada proibido.' };
         }
       }
-    } catch (e) {
+    } catch (e: any) {
+      console.error(`[Webhook Security] DNS validation error for ${hostname}:`, e.message);
       return { valid: false, error: 'Erro ao validar o destino da requisição.' };
     }
 
@@ -130,15 +143,22 @@ export async function safeWebhookFetch(url: string, options: RequestInit = {}): 
 
   try {
     console.log(`[Webhook Security] Initiating safe fetch to: ${url}`);
+    
+    // Cloudflare Workers / Edge specific: ensure we don't have SSRF validation 
+    // blocking a valid production n8n instance if it resolves to a range 
+    // the runtime considers internal.
+    
     const response = await fetch(url, {
       ...options,
-      redirect: 'manual', // Use 'manual' instead of 'error' for edge compatibility; check status below
+      redirect: 'manual', 
       signal: controller.signal,
     });
+    
     console.log(`[Webhook Security] Received response from ${url}: Status ${response.status}`);
     
     // Strict redirect blocking for SSRF protection
     if (response.status >= 300 && response.status < 400) {
+      console.warn(`[Webhook Security] Blocked redirect at ${url} (Status ${response.status})`);
       throw new Error('Redirecionamentos não são permitidos por segurança.');
     }
 
