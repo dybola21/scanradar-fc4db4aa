@@ -27,9 +27,12 @@ export function PresenceBadge({
 const STATUS_MAP: Record<string, { label: string; tone: string }> = {
   completed: { label: "Concluída", tone: "bg-success-soft text-success" },
   processing: { label: "Em execução", tone: "bg-info-soft text-info" },
+  queued: { label: "Aguardando", tone: "bg-info-soft/50 text-info" },
   pending: { label: "Na fila", tone: "bg-muted text-muted-foreground" },
   failed: { label: "Falhou", tone: "bg-destructive-soft text-destructive" },
+  delivery_unknown: { label: "Incerto", tone: "bg-warning-soft text-warning" },
 };
+
 
 export function SearchStatusBadge({ status, className }: { status?: string | null; className?: string }) {
   const key = status ?? "pending";

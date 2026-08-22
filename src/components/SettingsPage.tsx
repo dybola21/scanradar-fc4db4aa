@@ -24,8 +24,10 @@ export default function Settings() {
 
   const [webhookUrl, setWebhookUrl] = useState("");
   const [webhookSecret, setWebhookSecret] = useState("");
+  const [callbackSecret, setCallbackSecret] = useState<string | null>(null);
   const [isTesting, setIsTesting] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [copiedCallback, setCopiedCallback] = useState(false);
 
   useEffect(() => {
     if (settings) {
@@ -34,16 +36,25 @@ export default function Settings() {
     }
   }, [settings]);
 
+
   const updateMutation = useMutation({
-    mutationFn: (data: { webhook_url: string; webhook_secret?: string | null; integration_name: string }) =>
-      updateSettingsFn({ data }),
-    onSuccess: () => {
+    mutationFn: (data: { 
+      webhook_url: string; 
+      webhook_secret?: string | null; 
+      integration_name: string;
+      rotate_callback_secret?: boolean;
+    }) => updateSettingsFn({ data }),
+    onSuccess: (result) => {
       queryClient.invalidateQueries({ queryKey: ["n8n-settings"] });
       queryClient.invalidateQueries({ queryKey: ["integration-status"] });
       toast.success("Configurações salvas.");
+      if (result.callbackSecret) {
+        setCallbackSecret(result.callbackSecret);
+      }
     },
     onError: (error: Error) => toast.error(error.message),
   });
+
 
   const handleSave = (e: React.FormEvent) => {
     e.preventDefault();
@@ -80,7 +91,16 @@ export default function Settings() {
     setTimeout(() => setCopied(false), 2000);
   };
 
+  const copyCallback = async () => {
+    if (!callbackSecret) return;
+    await navigator.clipboard.writeText(callbackSecret);
+    setCopiedCallback(true);
+    toast.success("Segredo copiado.");
+    setTimeout(() => setCopiedCallback(false), 2000);
+  };
+
   if (isLoading) {
+
     return (
       <div className="mx-auto max-w-3xl space-y-6">
         <Skeleton className="h-10 w-64 rounded-xl" />

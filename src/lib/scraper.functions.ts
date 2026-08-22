@@ -4,7 +4,7 @@ import { z } from "zod";
 import { searchSchema, scraperResponseSchema } from "./schemas";
 import { buildPresenceDistribution, opportunityScore } from "./lead-insights";
 import { classifyWebsiteUrl } from "./website-utils";
-import { encrypt, decrypt } from "./server/encryption";
+import { encrypt, decrypt, generateCallbackSecret, hashSecret } from "./server/encryption";
 import { safeWebhookFetch } from "./server/webhook-security";
 
 export const getIntegrationSettings = createServerFn({ method: "GET" })
@@ -13,7 +13,7 @@ export const getIntegrationSettings = createServerFn({ method: "GET" })
     const { supabase, userId } = context;
     const { data, error } = await supabase
       .from("n8n_settings")
-      .select("webhook_url, webhook_secret, integration_name, is_connected, updated_at")
+      .select("webhook_url, webhook_secret, integration_name, is_connected, updated_at, callback_secret_hash")
       .eq("user_id", userId)
       .single();
 
@@ -23,11 +23,13 @@ export const getIntegrationSettings = createServerFn({ method: "GET" })
       webhook_url: data?.webhook_url || "",
       webhook_secret: data?.webhook_secret ? "••••••••••••••••" : "",
       has_secret: Boolean(data?.webhook_secret),
+      has_callback_secret: Boolean(data?.callback_secret_hash),
       integration_name: data?.integration_name || "n8n integration",
       is_connected: data?.is_connected || false,
       updated_at: data?.updated_at ?? null,
     };
   });
+
 
 export const getIntegrationStatus = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
@@ -49,6 +51,7 @@ export const getIntegrationStatus = createServerFn({ method: "GET" })
   });
 
 
+
 export const updateIntegrationSettings = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .validator(
@@ -56,17 +59,25 @@ export const updateIntegrationSettings = createServerFn({ method: "POST" })
       webhook_url: z.string().url("URL inválida"),
       webhook_secret: z.string().nullable().optional(),
       integration_name: z.string().min(1),
+      rotate_callback_secret: z.boolean().optional(),
     })
   )
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
-    const { webhook_url, webhook_secret, integration_name } = data;
+    const { webhook_url, webhook_secret, integration_name, rotate_callback_secret } = data;
 
     const updateData: any = {
       webhook_url,
       integration_name,
       updated_at: new Date().toISOString(),
     };
+
+    let newCallbackSecret: string | null = null;
+
+    if (rotate_callback_secret) {
+      newCallbackSecret = generateCallbackSecret();
+      updateData.callback_secret_hash = hashSecret(newCallbackSecret);
+    }
 
     if (webhook_secret) {
       updateData.webhook_secret = encrypt(webhook_secret);
@@ -83,8 +94,9 @@ export const updateIntegrationSettings = createServerFn({ method: "POST" })
       );
 
     if (error) throw error;
-    return { success: true };
+    return { success: true, callbackSecret: newCallbackSecret };
   });
+
 
 export const testIntegration = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
@@ -155,26 +167,22 @@ export const startSearch = createServerFn({ method: "POST" })
       throw new Error("Preencha nicho, cidade e estado.");
     }
 
-    if (uf.length !== 2) {
-      throw new Error("UF deve ter exatamente 2 letras.");
-    }
-
     // Check for ongoing identical searches
     const { data: ongoing } = await supabase
       .from("searches")
-      .select("id")
+      .select("id, status")
       .eq("user_id", userId)
       .eq("termo", termo)
       .eq("cidade", cidade)
       .eq("uf", uf)
-      .in("status", ["pending", "processing"])
-      .limit(1);
+      .in("status", ["pending", "queued", "processing"])
+      .limit(1)
+      .maybeSingle();
 
-    if (ongoing && ongoing.length > 0) {
-      throw new Error("Uma pesquisa idêntica já está em andamento");
+    if (ongoing) {
+      return { success: true, searchId: ongoing.id, status: ongoing.status, repeated: true };
     }
 
-    // Get n8n settings
     const { data: settings, error: settingsError } = await supabase
       .from("n8n_settings")
       .select("webhook_url, webhook_secret")
@@ -187,7 +195,6 @@ export const startSearch = createServerFn({ method: "POST" })
 
     const requestId = crypto.randomUUID();
 
-    // Create search record
     const { data: searchRecord, error: searchError } = await supabase
       .from("searches")
       .insert({
@@ -196,7 +203,7 @@ export const startSearch = createServerFn({ method: "POST" })
         termo,
         cidade,
         uf,
-        status: "processing",
+        status: "queued",
       })
       .select()
       .single();
@@ -204,84 +211,82 @@ export const startSearch = createServerFn({ method: "POST" })
     if (searchError) throw searchError;
 
     try {
-      // Call n8n
       const secret = settings.webhook_secret ? decrypt(settings.webhook_secret) : "";
+      
+      // Call n8n with 15s timeout
       const response = await safeWebhookFetch(settings.webhook_url, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
           "Accept": "application/json",
           "X-Webhook-Secret": secret,
+          "X-Idempotency-Key": searchRecord.id,
         },
         body: JSON.stringify({ 
           requestType: "search",
-          test: false,
+          searchId: searchRecord.id,
           termo, 
           cidade, 
           uf 
         }),
       });
 
-      if (response.status === 401 || response.status === 403) {
-        throw new Error("A chave de segurança foi recusada.");
+      let nextStatus = "delivery_unknown";
+      if (response.status >= 200 && response.status < 300) {
+        nextStatus = "processing";
+      } else if (response.status === 401 || response.status === 403 || (response.status >= 400 && response.status < 500)) {
+        nextStatus = "failed";
       }
 
-      if (!response.ok) {
-        const errorText = await response.text();
-        await supabase
-          .from("searches")
-          .update({ status: "failed", error_message: errorText })
-          .eq("id", searchRecord.id);
-        return { success: false, error: "O n8n retornou um erro inesperado.", searchId: searchRecord.id };
-      }
-
-      const result = await response.json();
-      const validated = scraperResponseSchema.parse(result);
-
-      // Save leads
-      if (validated.resultado.leads.length > 0) {
-        const leadsToInsert = validated.resultado.leads.map((l) => ({
-          search_id: searchRecord.id,
-          nome: l['Nome'] ?? null,
-          telefone: l['Telefone'] ?? null,
-          bairro: l['Bairro'] ?? null,
-          cidade: l['Cidade'] ?? null,
-          uf: l['UF'] ?? null,
-          website: l['Website'] ?? null,
-          email: l["E-mail"] ?? null,
-          email2: l["E-mail2"] ?? null,
-        }));
-
-        await supabase.from("leads").insert(leadsToInsert);
-      }
-
-      // Update search record
       await supabase
         .from("searches")
-        .update({
-          status: "completed",
-          total_leads: validated.resultado.totalLeads,
-          sheet_name: validated.googleSheet?.name ?? null,
-          sheet_url: validated.googleSheet?.url ?? null,
-          completed_at: new Date().toISOString(),
+        .update({ status: nextStatus })
+        .eq("id", searchRecord.id);
+
+      return { 
+        success: true, 
+        searchId: searchRecord.id, 
+        status: nextStatus,
+        repeated: false 
+      };
+    } catch (err: any) {
+      console.error("Webhook trigger error:", err);
+      // AbortError or timeout = delivery_unknown
+      const isTimeout = err.name === 'AbortError' || err.message?.includes('timeout');
+      const finalStatus = isTimeout ? "delivery_unknown" : "failed";
+      
+      await supabase
+        .from("searches")
+        .update({ 
+          status: finalStatus, 
+          error_message: isTimeout ? "O n8n não respondeu ao aceite inicial (timeout)." : String(err) 
         })
         .eq("id", searchRecord.id);
 
-      return {
-        success: true,
-        searchId: searchRecord.id,
-        leads: validated.resultado.leads,
-        totalLeads: validated.resultado.totalLeads,
+      return { 
+        success: finalStatus !== "failed", 
+        searchId: searchRecord.id, 
+        status: finalStatus,
+        error: finalStatus === "failed" ? String(err) : undefined
       };
-    } catch (err) {
-      console.error("Scraper error:", err);
-      await supabase
-        .from("searches")
-        .update({ status: "failed", error_message: String(err) })
-        .eq("id", searchRecord.id);
-      return { success: false, error: String(err), searchId: searchRecord.id };
     }
   });
+
+export const checkSearchStatus = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .validator(z.object({ searchId: z.string().uuid() }))
+  .handler(async ({ data, context }) => {
+    const { supabase, userId } = context;
+    const { data: search } = await supabase
+      .from("searches")
+      .select("status")
+      .eq("id", data.searchId)
+      .eq("user_id", userId)
+      .single();
+    
+    return search;
+  });
+
 
 export const getSearchHistory = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])

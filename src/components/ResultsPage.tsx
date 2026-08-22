@@ -1,7 +1,7 @@
-import { useMemo, useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useMemo, useState, useEffect } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { getSearchDetails } from "@/lib/scraper.functions";
+import { getSearchDetails, checkSearchStatus } from "@/lib/scraper.functions";
 import { useParams, Link } from "@tanstack/react-router";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
@@ -20,6 +20,10 @@ import {
   AlertCircle,
   Copy,
   X,
+  RefreshCcw,
+  Loader2,
+  Clock,
+  AlertTriangle,
 } from "lucide-react";
 import { exportToCSV, exportToExcel } from "@/lib/export-utils";
 import { toast } from "sonner";
@@ -31,21 +35,84 @@ import { StatCard } from "@/components/ui-kit/StatCard";
 import { opportunityScore, PRESENCE_LABEL, PRESENCE_ORDER } from "@/lib/lead-insights";
 import { Target, Users, Globe, HelpCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { supabase } from "@/integrations/supabase/client";
 
 export default function ResultsPage() {
   const { searchId } = useParams({ from: "/_authenticated/results/$searchId" });
+  const queryClient = useQueryClient();
   const fetchDetails = useServerFn(getSearchDetails);
+  const checkStatusFn = useServerFn(checkSearchStatus);
 
   const [presenceFilter, setPresenceFilter] = useState("all");
   const [sortBy, setSortBy] = useState("opportunity");
   const [query, setQuery] = useState("");
   const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [isReconciling, setIsReconciling] = useState(false);
+
 
   const { data, isLoading } = useQuery({
     queryKey: ["search-details", searchId],
     queryFn: () => fetchDetails({ data: { searchId } }),
-    refetchInterval: (q) => (q.state.data?.search.status === "processing" ? 4000 : false),
+    // Only poll as fallback if terminal state not reached and realtime might have failed
+    refetchInterval: (q) => {
+      const status = q.state.data?.search.status;
+      return (status && !["completed", "failed"].includes(status)) ? 10000 : false;
+    },
   });
+
+  useEffect(() => {
+    if (!searchId) return;
+
+    const channel = supabase
+      .channel(`search_updates_${searchId}`)
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'searches',
+          filter: `id=eq.${searchId}`
+        },
+        () => {
+          queryClient.invalidateQueries({ queryKey: ["search-details", searchId] });
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'leads',
+          filter: `search_id=eq.${searchId}`
+        },
+        () => {
+          queryClient.invalidateQueries({ queryKey: ["search-details", searchId] });
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [searchId, queryClient]);
+
+  const handleReconcile = async () => {
+    setIsReconciling(true);
+    try {
+      const status = await checkStatusFn({ data: { searchId } });
+      if (status?.status === 'completed' || status?.status === 'failed') {
+        queryClient.invalidateQueries({ queryKey: ["search-details", searchId] });
+        toast.success("Status atualizado.");
+      } else {
+        toast.info("A extração ainda está sendo processada pelo n8n.");
+      }
+    } catch (err) {
+      toast.error("Erro ao verificar status.");
+    } finally {
+      setIsReconciling(false);
+    }
+  };
+
 
   const search = data?.search;
   const leads = data?.leads ?? [];
@@ -172,6 +239,26 @@ export default function ResultsPage() {
 
   return (
     <div className="space-y-6">
+      {search.status === "processing" && (
+        <div className="flex items-center gap-3 rounded-xl border border-primary/20 bg-primary/5 p-4 animate-pulse">
+          <Clock className="size-5 text-primary" />
+          <div className="flex-1">
+            <p className="text-sm font-medium text-primary">Extração em andamento...</p>
+            <p className="text-xs text-primary/70">Os leads aparecerão aqui automaticamente conforme forem detectados.</p>
+          </div>
+        </div>
+      )}
+
+      {search.status === "delivery_unknown" && (
+        <div className="flex items-center gap-3 rounded-xl border border-warning/20 bg-warning/5 p-4">
+          <AlertTriangle className="size-5 text-warning" />
+          <div className="flex-1">
+            <p className="text-sm font-medium text-warning">Status de entrega desconhecido</p>
+            <p className="text-xs text-warning/70">O n8n não confirmou o recebimento da busca. Clique em "Verificar processamento" para reconciliar.</p>
+          </div>
+        </div>
+      )}
+
       <div className="flex items-center gap-3">
         <Button asChild variant="outline" size="icon" className="size-10 shrink-0 rounded-xl" aria-label="Voltar ao histórico">
           <Link to="/history">
@@ -185,6 +272,17 @@ export default function ResultsPage() {
           actions={
             <>
               <SearchStatusBadge status={search.status} />
+              {search.status === "delivery_unknown" && (
+                <Button 
+                  variant="outline" 
+                  className="min-h-11 rounded-xl border-warning/50 text-warning" 
+                  onClick={handleReconcile}
+                  disabled={isReconciling}
+                >
+                  {isReconciling ? <Loader2 className="mr-2 size-4 animate-spin" /> : <RefreshCcw className="mr-2 size-4" />}
+                  Verificar processamento
+                </Button>
+              )}
               <Button variant="outline" className="min-h-11 rounded-xl" onClick={handleExportCSV} disabled={!exportRows.length}>
                 <Download className="size-4" />
                 CSV
@@ -201,6 +299,7 @@ export default function ResultsPage() {
                   </a>
                 </Button>
               ) : null}
+
             </>
           }
         />

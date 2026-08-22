@@ -27,7 +27,7 @@ export const searchRecordSchema = z.object({
   termo: z.string(),
   cidade: z.string(),
   uf: z.string(),
-  status: z.enum(["pending", "processing", "completed", "failed"]),
+  status: z.enum(["pending", "queued", "processing", "completed", "failed", "delivery_unknown"]),
   total_leads: z.number().nullable(),
   sheet_name: z.string().nullable(),
   sheet_url: z.string().nullable(),
