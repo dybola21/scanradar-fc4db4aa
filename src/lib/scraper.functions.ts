@@ -13,7 +13,7 @@ export const getIntegrationSettings = createServerFn({ method: "GET" })
     const { supabase, userId } = context;
     const { data, error } = await supabase
       .from("n8n_settings")
-      .select("webhook_url, webhook_secret, integration_name, is_connected, updated_at")
+      .select("webhook_url, webhook_secret, integration_name, is_connected, updated_at, callback_secret_hash")
       .eq("user_id", userId)
       .single();
 
@@ -23,11 +23,13 @@ export const getIntegrationSettings = createServerFn({ method: "GET" })
       webhook_url: data?.webhook_url || "",
       webhook_secret: data?.webhook_secret ? "••••••••••••••••" : "",
       has_secret: Boolean(data?.webhook_secret),
+      has_callback_secret: Boolean(data?.callback_secret_hash),
       integration_name: data?.integration_name || "n8n integration",
       is_connected: data?.is_connected || false,
       updated_at: data?.updated_at ?? null,
     };
   });
+
 
 export const getIntegrationStatus = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
