@@ -1,42 +1,43 @@
-# Plano de Correção: Integração n8n e Erro AbortError (v3)
+# Plano de Correção: Integração n8n e Erro AbortError (v4)
 
-## 1. Infraestrutura e Fluxo Assíncrono
-- **Timeout**: Reduzir para um valor curto e configurável (ex: 15s) para o aceite inicial, já que o n8n será configurado para `Respond Immediately`.
-- **Idempotência Real**: 
-    - `searchId` (UUID) como chave única no banco de dados.
-    - Envio do header `X-Idempotency-Key` ao n8n.
-    - O n8n deve validar o `searchId` no início do workflow.
+## 1. Infraestrutura e Fluxo Assíncrono Idempotente
+- **Timeout**: Reduzir para 15s no servidor (aceite inicial), com o n8n em `Respond Immediately`.
+- **Idempotência**:
+    - `searchId` (UUID) único no banco.
+    - Header `X-Idempotency-Key` no envio.
+    - **Ajuste n8n**: O workflow deve consultar um armazenamento persistente (Data Table ou banco) para garantir que um `searchId` nunca seja reprocessado.
 
-## 2. Refatoração da Server Function `startSearch`
-- A função criará o registro como `queued`, enviará a requisição ao n8n e retornará imediatamente após o aceite (HTTP 2xx).
-- Se o aceite falhar (timeout/rede), o status mudará para `delivery_unknown`.
-- Se o aceite for bem-sucedido, o status mudará para `processing`.
+## 2. Refatoração `startSearch` e Tratamento HTTP
+- Criar registro como `queued`.
+- Classificação de retorno:
+    - `2xx` → `processing`.
+    - `401/403` → `failed` (Erro de autenticação).
+    - `4xx` (outros) → `failed` (Requisição rejeitada).
+    - `5xx` / Timeout / Conexão → `delivery_unknown`.
 
-## 3. Callback HTTP Robusto e Transacional
-- **Endpoint**: Criar uma Server Route (`src/routes/api.public.results.ts`) usando `createFileRoute` com handlers `POST`.
-- **Segurança**: Protegido por segredo exclusivo de callback, limite de tamanho e validação Zod.
-- **Transacionalidade**: Implementar uma função RPC no banco (Supabase) que realize em uma única transação:
-    1. Validar a existência e o status da busca.
-    2. Realizar `upsert` dos leads (usando restrição única de `search_id` + `place_id`/`url`).
-    3. Atualizar metadados (planilha, total).
-    4. Mudar status para `completed` ou `failed`.
-- **Estados**: O callback aceitará `completed`, `failed` (com erro seguro) e `partial`.
+## 3. Callback Robusto e Transacional (External Server Route)
+- **Endpoint**: `src/routes/api.public.results.ts` (Handler POST).
+- **Segurança**:
+    - **X-Callback-Secret**: Gerado por usuário/integração, armazenado criptografado no banco, enviado via header. Nunca exposto no frontend.
+    - Validação Zod e limite de tamanho (1MB).
+- **Transacionalidade (Supabase RPC)**:
+    - `upsert` de leads (chave: `search_id` + `place_id` ou `url`).
+    - Atualização de status para `completed` ou `failed` APÓS confirmação de gravação de todos os leads.
+- **Tratamento de Erros no n8n**: O workflow deve possuir ramificação de erro (ou Error Trigger) que notifique o callback com `status: "failed"` em caso de quebra interna.
 
-## 4. Acompanhamento no Frontend
-- Utilizar **Supabase Realtime** no componente de resultados para ouvir mudanças no registro da busca e na tabela de leads, garantindo atualização instantânea sem polling.
+## 4. Acompanhamento em Tempo Real
+- **Supabase Realtime**: Habilitar replicação para `searches` e `leads`.
+- **Frontend**: Componente de resultados assina o canal filtrado por `searchId` com fallback de polling em caso de falha na conexão Realtime.
 
 ## 5. UI e Feedback
 - Toasts: "Busca iniciada e sendo processada."
-- Bloqueio de cliques duplos durante o `mutate`.
-- Substituir `AbortError` por: "Não foi possível confirmar o recebimento. Verifique o histórico antes de tentar novamente."
+- Bloqueio de duplo clique no botão de busca.
+- Erros amigáveis: Substituir `AbortError` por "Não foi possível confirmar o recebimento. Verifique o histórico...".
 
-## 6. Ajustes no n8n (Manual pelo Usuário)
-- Webhook: `Response Mode: Respond Immediately`.
-- Nó final: `HTTP Request POST` para o novo callback com `Retry On Fail` (3 tentativas).
-- Ramificação curta para `requestType: "connection_test"`.
+## 6. Validação e Testes
+- **Teste de Ponta a Ponta (Obrigatório)**: Validar aceite imediato, gravação na planilha, callback de sucesso/erro e atualização da UI via Realtime.
+- Logs: `searchId`, `requestType`, status HTTP, duração (sem segredos ou PII).
 
-## 7. Testes e Auditoria
-- Logs server-side: `searchId`, `requestType`, status HTTP, duração e resultado da entrega (sem dados sensíveis).
 - Implementar um "Teste de Ponta a Ponta" opcional para validar todo o ciclo (envio + callback).
 
 
