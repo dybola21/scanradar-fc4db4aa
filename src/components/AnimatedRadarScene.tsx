@@ -9,7 +9,7 @@ interface AnimatedRadarSceneProps {
 /**
  * SVG Building Silhouette
  */
-const BuildingIcon = ({ x, y, size = 20, delay, duration }: { x: number, y: number, size?: number, delay: number, duration: number }) => {
+const BuildingIcon = ({ x, y, size = 6, delay, duration }: { x: number, y: number, size?: number, delay: number, duration: number }) => {
   return (
     <g 
       transform={`translate(${x - size / 2}, ${y - size / 2})`}
@@ -25,10 +25,11 @@ const BuildingIcon = ({ x, y, size = 20, delay, duration }: { x: number, y: numb
         viewBox="0 0 24 24"
         fill="none"
         xmlns="http://www.w3.org/2000/svg"
+        className="text-[#22C55E]"
       >
         <path
           d="M3 21H21M5 21V5C5 4.46957 5.21071 3.96086 5.58579 3.58579C5.96086 3.21071 6.46957 3 7 3H17C17.5304 3 18.0391 3.21071 18.4142 3.58579C18.7893 3.96086 19 4.46957 19 5V21M9 7H11M9 11H11M9 15H11M13 7H15M13 11H15M13 15H15"
-          stroke="#22C55E"
+          stroke="currentColor"
           strokeWidth="2"
           strokeLinecap="round"
           strokeLinejoin="round"
@@ -42,7 +43,6 @@ export function AnimatedRadarScene({ className, size = 400 }: AnimatedRadarScene
   const rotationDuration = 5; // seconds per full rotation
 
   // Detectable points with their coordinates and calculated angles for sync
-  // Center is 50, 50. y is inverted in SVG coordinates.
   const points = useMemo(() => [
     { x: 72, y: 28 },
     { x: 32, y: 65 },
@@ -50,12 +50,13 @@ export function AnimatedRadarScene({ className, size = 400 }: AnimatedRadarScene
     { x: 45, y: 15 },
     { x: 85, y: 60 },
     { x: 25, y: 35 },
+    { x: 15, y: 70 },
   ].map(p => {
-    // Calculate angle in degrees from the top (12 o'clock)
-    // atan2(y, x) gives angle from positive x-axis. 
-    // We want angle from negative y-axis (up).
+    // Center is 50, 50.
     const dx = p.x - 50;
     const dy = p.y - 50;
+    // atan2 gives angle from positive x-axis. 
+    // Convert to angle from negative y-axis (top) clockwise.
     let angle = Math.atan2(dy, dx) * (180 / Math.PI) + 90;
     if (angle < 0) angle += 360;
     
@@ -88,11 +89,11 @@ export function AnimatedRadarScene({ className, size = 400 }: AnimatedRadarScene
             }
             
             @keyframes detectionSequence {
-              0% { opacity: 0; transform: scale(0.7); filter: drop-shadow(0 0 0px #22C55E); }
-              1% { opacity: 1; transform: scale(1.1); filter: drop-shadow(0 0 8px #22C55E); }
-              5% { opacity: 1; transform: scale(1); filter: drop-shadow(0 0 4px #22C55E); }
-              25% { opacity: 1; transform: scale(1); filter: drop-shadow(0 0 2px #22C55E); }
-              35% { opacity: 0; transform: scale(0.9); filter: drop-shadow(0 0 0px #22C55E); }
+              0% { opacity: 0; transform: scale(0.7); }
+              0.5% { opacity: 1; transform: scale(1.1); filter: drop-shadow(0 0 4px rgba(34, 197, 94, 0.6)); }
+              5% { opacity: 1; transform: scale(1); filter: drop-shadow(0 0 2px rgba(34, 197, 94, 0.4)); }
+              25% { opacity: 1; transform: scale(1); filter: drop-shadow(0 0 1px rgba(34, 197, 94, 0.2)); }
+              35% { opacity: 0; transform: scale(0.9); }
               100% { opacity: 0; }
             }
 
@@ -140,7 +141,7 @@ export function AnimatedRadarScene({ className, size = 400 }: AnimatedRadarScene
             key={i} 
             x={p.x} 
             y={p.y} 
-            size={isMobile ? 16 : 20} 
+            size={6} 
             delay={p.delay} 
             duration={rotationDuration} 
           />
@@ -151,7 +152,7 @@ export function AnimatedRadarScene({ className, size = 400 }: AnimatedRadarScene
           {/* Translucent sector (shadow) BEHIND the line */}
           {/* A 40 degree sector. Line is at 0 deg (top), sector goes from -40 to 0. */}
           <path
-            d="M 50 50 L 19.1 19.1 A 48 48 0 0 1 50 2 Z"
+            d="M 50 50 L 19.2 13.2 A 48 48 0 0 1 50 2 Z"
             fill="url(#radarSweepGradient)"
             opacity="0.8"
           />
@@ -169,7 +170,7 @@ export function AnimatedRadarScene({ className, size = 400 }: AnimatedRadarScene
         <circle cx="50" cy="50" r="4" fill="#38BDF8" opacity="0.1" />
 
         <defs>
-          <linearGradient id="radarSweepGradient" x1="19.1" y1="19.1" x2="50" y2="2" gradientUnits="userSpaceOnUse">
+          <linearGradient id="radarSweepGradient" x1="19.2" y1="13.2" x2="50" y2="2" gradientUnits="userSpaceOnUse">
             <stop offset="0%" stopColor="#38BDF8" stopOpacity="0" />
             <stop offset="100%" stopColor="#38BDF8" stopOpacity="0.4" />
           </linearGradient>
@@ -178,6 +179,3 @@ export function AnimatedRadarScene({ className, size = 400 }: AnimatedRadarScene
     </div>
   );
 }
-
-// Simple check for mobile sizing in SVG context
-const isMobile = typeof window !== 'undefined' && window.innerWidth < 768;
