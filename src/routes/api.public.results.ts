@@ -1,5 +1,5 @@
 import { createFileRoute } from '@tanstack/react-router'
-import { createClient } from '@supabase/supabase-js'
+
 import { verifySecret } from '@/lib/server/encryption'
 
 export const Route = createFileRoute('/api/public/results')({
@@ -32,10 +32,7 @@ export const Route = createFileRoute('/api/public/results')({
             return jsonResponse({ success: false, error: 'Missing x-callback-secret header or searchId' }, 400);
           }
 
-          const supabaseUrl = process.env['VITE_SUPABASE_URL']!
-          const supabaseAdmin = createClient(supabaseUrl, process.env['SUPABASE_SERVICE_ROLE_KEY']!, {
-            auth: { autoRefreshToken: false, persistSession: false }
-          })
+          const { supabaseAdmin } = await import('@/integrations/supabase/client.server')
 
           // Get the search record to verify the callback secret
           const { data: search, error: searchError } = await supabaseAdmin
@@ -82,11 +79,11 @@ export const Route = createFileRoute('/api/public/results')({
           const { error: rpcError } = await supabaseAdmin.rpc('complete_search_with_leads', {
             p_search_id: searchId,
             p_status: status || 'completed',
-            p_total_leads: totalLeads || 0,
+            p_total_leads: Number(totalLeads) || 0,
             p_leads: mappedLeads,
-            p_sheet_name: sheetName,
-            p_sheet_url: sheetUrl,
-            p_error_message: message
+            p_sheet_name: sheetName || null,
+            p_sheet_url: sheetUrl || null,
+            p_error_message: message || null
           })
 
           if (rpcError) {
