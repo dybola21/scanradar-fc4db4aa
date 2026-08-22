@@ -42,24 +42,44 @@ export function AnimatedRadarScene({ className, size = 400 }: AnimatedRadarScene
   const rotationDuration = 5; // seconds per full rotation
 
   // Detectable points with their coordinates and calculated angles for sync
+  // Distributing points inside the 48-radius circle
   const points = useMemo(() => [
-    { x: 72, y: 28 },
+    { x: 72, y: 35 },
     { x: 32, y: 65 },
     { x: 58, y: 78 },
-    { x: 45, y: 15 },
-    { x: 85, y: 60 },
-    { x: 25, y: 35 },
-    { x: 15, y: 70 },
+    { x: 45, y: 18 },
+    { x: 80, y: 55 },
+    { x: 28, y: 38 },
+    { x: 18, y: 62 },
+    { x: 65, y: 22 },
+    { x: 40, y: 82 },
+    { x: 55, y: 45 },
+    { x: 88, y: 48 },
+    { x: 15, y: 52 },
   ].map(p => {
     const dx = p.x - 50;
     const dy = p.y - 50;
-    let angle = Math.atan2(dy, dx) * (180 / Math.PI) + 90;
+    
+    // Ensure the point is strictly inside the radar radius (48)
+    const distance = Math.sqrt(dx * dx + dy * dy);
+    let finalX = p.x;
+    let finalY = p.y;
+    
+    if (distance > 45) {
+      const ratio = 45 / distance;
+      finalX = 50 + dx * ratio;
+      finalY = 50 + dy * ratio;
+    }
+
+    const finalDx = finalX - 50;
+    const finalDy = finalY - 50;
+    
+    let angle = Math.atan2(finalDy, finalDx) * (180 / Math.PI) + 90;
     if (angle < 0) angle += 360;
     
-    // Negative delay ensures the animation is in sync from t=0
     const delay = ((angle / 360) * rotationDuration) - rotationDuration;
     
-    return { ...p, angle, delay };
+    return { x: finalX, y: finalY, angle, delay };
   }), [rotationDuration]);
 
   return (
@@ -88,8 +108,8 @@ export function AnimatedRadarScene({ className, size = 400 }: AnimatedRadarScene
               0% { opacity: 0; transform: scale(0.7); }
               1% { opacity: 1; transform: scale(1.1); filter: drop-shadow(0 0 4px rgba(34, 197, 94, 0.6)); }
               5% { opacity: 1; transform: scale(1); filter: drop-shadow(0 0 2px rgba(34, 197, 94, 0.4)); }
-              20% { opacity: 1; transform: scale(1); filter: drop-shadow(0 0 1px rgba(34, 197, 94, 0.2)); }
-              30% { opacity: 0; transform: scale(0.9); }
+              15% { opacity: 1; transform: scale(1); filter: drop-shadow(0 0 1px rgba(34, 197, 94, 0.2)); }
+              20% { opacity: 0; transform: scale(0.9); }
               100% { opacity: 0; }
             }
 
@@ -137,7 +157,7 @@ export function AnimatedRadarScene({ className, size = 400 }: AnimatedRadarScene
             key={i} 
             x={p.x} 
             y={p.y} 
-            size={6} 
+            size={5} 
             delay={p.delay} 
             duration={rotationDuration} 
           />
