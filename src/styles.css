@@ -169,7 +169,29 @@
   --sidebar-accent-foreground: oklch(0.98 0.005 260);
   --sidebar-border: oklch(1 0 0 / 8%);
   --sidebar-ring: oklch(0.98 0.005 260 / 10%);
+  
+  /* ScanRadar Redesign Colors */
+  --scan-bg: #07111F;
+  --scan-surface: #101D30;
+  --scan-field: #142238;
+  --scan-border: #263750;
+  --scan-text: #F6F8FB;
+  --scan-text-muted: #91A1B8;
+  --scan-accent: #38BDF8;
+  --scan-success: #22C55E;
 }
+
+@theme inline {
+  --color-scan-bg: var(--scan-bg);
+  --color-scan-surface: var(--scan-surface);
+  --color-scan-field: var(--scan-field);
+  --color-scan-border: var(--scan-border);
+  --color-scan-text: var(--scan-text);
+  --color-scan-text-muted: var(--scan-text-muted);
+  --color-scan-accent: var(--scan-accent);
+  --color-scan-success: var(--scan-success);
+}
+
 
 
 @layer base {
