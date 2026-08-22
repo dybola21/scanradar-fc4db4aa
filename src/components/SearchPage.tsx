@@ -37,9 +37,13 @@ export default function SearchPage() {
   const lastSearch = history?.[0];
 
   const searchMutation = useMutation({
-    mutationFn: (data: { termo: string; cidade: string; uf: string }) => startSearchFn({ data }),
+    mutationFn: (data: { termo: string; cidade: string; uf: string }) => {
+      console.log("[Search] Initiating search mutation with data:", data);
+      return startSearchFn({ data });
+    },
     onSuccess: (result) => {
       if (result.success) {
+        console.log("[Search] Mutation success:", result);
         if (result.status === 'repeated') {
           toast.info("Esta busca já está sendo processada.");
         } else if (result.status === 'delivery_unknown') {
@@ -49,10 +53,14 @@ export default function SearchPage() {
         }
         navigate({ to: "/results/$searchId", params: { searchId: result.searchId } });
       } else {
+        console.error("[Search] Mutation failed with error result:", result);
         toast.error(result.error ?? "O n8n retornou um erro inesperado.");
       }
     },
-    onError: (error: Error) => toast.error(error.message),
+    onError: (error: Error) => {
+      console.error("[Search] Mutation critical error:", error);
+      toast.error(error.message);
+    },
   });
 
   const validate = () => {
