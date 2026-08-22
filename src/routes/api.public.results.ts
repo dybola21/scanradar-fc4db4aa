@@ -24,7 +24,13 @@ export const Route = createFileRoute('/api/public/results')({
             return jsonResponse({ success: false, error: 'Invalid JSON body' }, 400);
           }
 
-          const { searchId, status, totalLeads, leads, sheetName, sheetUrl, message } = body
+          let { searchId, status, totalLeads, leads, sheetName, sheetUrl, message } = body
+
+          // Sanitize searchId - common n8n mistake to include leading "="
+          if (typeof searchId === 'string' && searchId.startsWith('=')) {
+            console.log(`[Callback] Sanitizing searchId by removing leading '=': ${searchId}`);
+            searchId = searchId.substring(1);
+          }
 
           if (searchId) {
             await serverLogScanEvent({
@@ -64,7 +70,7 @@ export const Route = createFileRoute('/api/public/results')({
             .from('searches')
             .select('user_id')
             .eq('id', searchId)
-            .single()
+            .maybeSingle()
 
           if (searchError || !search) {
             const errorMsg = 'Search not found';
@@ -110,7 +116,7 @@ export const Route = createFileRoute('/api/public/results')({
 
           // Map leads from English to Portuguese names as expected by the RPC
           // Generate a deterministic lead_key if missing to ensure deduplication
-          const mappedLeads = (leads || []).map((lead: any) => {
+          const mappedLeads = (Array.isArray(leads) ? leads : []).map((lead: any) => {
             const nome = lead.name || lead.nome || 'N/A';
             const telefone = lead.phone || lead.telefone || '';
             const fallbackKey = `key_${searchId}_${nome}_${telefone}`.replace(/\s+/g, '_').toLowerCase();
