@@ -77,8 +77,9 @@ export function AnimatedRadarLogo({ className, size = 34, variant = "logo" }: An
 
         {/* Scanning Sweep */}
         <g className="radar-sweep-group">
+          {/* Leading edge line at 50, 5 */}
           <path
-            d="M 50 50 L 50 5 A 45 45 0 0 1 81.8 18.2 Z"
+            d="M 50 50 L 21.2 15.5 A 45 45 0 0 1 50 5 Z"
             fill="url(#radarSweepGradient2)"
             opacity="0.6"
           />
@@ -99,7 +100,7 @@ export function AnimatedRadarLogo({ className, size = 34, variant = "logo" }: An
         <circle cx="50" cy="50" r="2" fill="#38BDF8" />
 
         <defs>
-          <linearGradient id="radarSweepGradient2" x1="50" y1="50" x2="81.8" y2="18.2" gradientUnits="userSpaceOnUse">
+          <linearGradient id="radarSweepGradient2" x1="21.2" y1="15.5" x2="50" y2="5" gradientUnits="userSpaceOnUse">
             <stop offset="0%" stopColor="#38BDF8" stopOpacity="0" />
             <stop offset="100%" stopColor="#38BDF8" stopOpacity="0.3" />
           </linearGradient>
