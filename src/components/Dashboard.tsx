@@ -16,14 +16,113 @@ import { cn } from "@/lib/utils";
 export default function Dashboard() {
   const [period, setPeriod] = useState<PeriodValue>("30");
   const fetchStats = useServerFn(getDashboardStats);
+  const fetchStatus = useServerFn(getIntegrationStatus);
+
+  const { data: integration, isLoading: isIntegrationLoading } = useQuery({
+    queryKey: ["integration-status"],
+    queryFn: () => fetchStatus(),
+  });
 
   const days = period === "all" ? 0 : (Number(period) as 7 | 30 | 90);
-  const { data: stats, isLoading } = useQuery({
+  const { data: stats, isLoading, isError } = useQuery({
     queryKey: ["dashboard-stats", period],
     queryFn: () => fetchStats({ data: { days } }),
+    enabled: Boolean(integration?.configured),
   });
 
   const periodLabel = PERIOD_OPTIONS.find((p) => p.value === period)?.label.toLowerCase() ?? "";
+
+  // 1. Loading State
+  if (isLoading || isIntegrationLoading) {
+    return (
+      <div className="space-y-6">
+        <PageHeader title="Carregando dados..." />
+        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+          {Array.from({ length: 4 }).map((_, i) => (
+            <Skeleton key={i} className="h-32 rounded-2xl" />
+          ))}
+        </div>
+        <div className="grid gap-4 lg:grid-cols-3">
+          <Skeleton className="h-96 rounded-2xl lg:col-span-2" />
+          <Skeleton className="h-96 rounded-2xl" />
+        </div>
+      </div>
+    );
+  }
+
+  // 2. Error State
+  if (isError) {
+    return (
+      <div className="flex min-h-[400px] flex-col items-center justify-center space-y-4 rounded-2xl border border-destructive/20 bg-destructive-soft/10 p-12 text-center">
+        <div className="rounded-full bg-destructive/10 p-3 text-destructive">
+          <Search className="size-8" />
+        </div>
+        <div className="max-w-md space-y-2">
+          <h2 className="text-xl font-semibold text-foreground">Erro ao carregar dashboard</h2>
+          <p className="text-sm text-muted-foreground">
+            Não foi possível recuperar as estatísticas. Verifique sua conexão e tente novamente.
+          </p>
+        </div>
+        <Button onClick={() => window.location.reload()} variant="outline" className="min-h-11 rounded-xl">
+          Recarregar página
+        </Button>
+      </div>
+    );
+  }
+
+  // 3. Integration Necessary State
+  if (!integration?.configured) {
+    return (
+      <div className="flex min-h-[450px] flex-col items-center justify-center space-y-5 rounded-2xl border border-border bg-card p-12 text-center shadow-sm">
+        <div className="rounded-2xl bg-primary/5 p-4 text-primary">
+          <Radar className="size-12" />
+        </div>
+        <div className="max-w-md space-y-2">
+          <h2 className="text-2xl font-bold tracking-tight text-foreground">Configure o ScanRadar para começar</h2>
+          <p className="text-sm text-muted-foreground">
+            Você ainda não conectou um webhook do n8n. Para iniciar extrações de leads e ver suas métricas, realize a configuração técnica.
+          </p>
+        </div>
+        <Button asChild className="min-h-12 rounded-xl px-8 shadow-sm">
+          <Link to="/settings">
+            Configurar n8n
+            <ArrowRight className="size-4" />
+          </Link>
+        </Button>
+      </div>
+    );
+  }
+
+  // 4. First Search State
+  if (stats?.totalSearches === 0) {
+    return (
+      <div className="space-y-6">
+        <PageHeader 
+          title="Dashboard" 
+          description="Bem-vindo ao ScanRadar. Sua engine de extração está pronta." 
+        />
+        <div className="flex min-h-[400px] flex-col items-center justify-center space-y-5 rounded-2xl border-2 border-dashed border-border bg-card/50 p-12 text-center">
+          <div className="rounded-full bg-secondary p-4 text-muted-foreground">
+            <Search className="size-10" />
+          </div>
+          <div className="max-w-md space-y-2">
+            <h2 className="text-xl font-semibold text-foreground">Nenhuma busca realizada</h2>
+            <p className="text-sm text-muted-foreground">
+              Sua integração está ativa! Realize sua primeira busca no Google Maps para começar a capturar oportunidades.
+            </p>
+          </div>
+          <Button asChild className="min-h-12 rounded-xl px-8 shadow-sm">
+            <Link to="/search">
+              Iniciar minha primeira busca
+              <Search className="size-4" />
+            </Link>
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
+  // 5. Active Data State
 
   return (
     <div className="space-y-6">
