@@ -30,6 +30,7 @@ export const Route = createFileRoute('/api/public/results')({
           .single()
 
         if (searchError || !search) {
+          console.error(`[Callback] Search record not found for searchId: ${searchId}`);
           return new Response(JSON.stringify({ error: 'Search not found' }), { status: 404 })
         }
 
@@ -41,6 +42,7 @@ export const Route = createFileRoute('/api/public/results')({
           .single()
 
         if (!settings?.callback_secret_hash || !verifySecret(secret, settings.callback_secret_hash)) {
+          console.error(`[Callback] Unauthorized secret for searchId: ${searchId}`);
           return new Response(JSON.stringify({ error: 'Unauthorized' }), { status: 401 })
         }
 
