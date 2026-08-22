@@ -14,9 +14,9 @@ export const Route = createFileRoute('/api/public/results')({
           });
         };
 
+        let body: any;
         try {
           const secret = request.headers.get('x-callback-secret')
-          let body;
           try {
             body = await request.json();
           } catch (e) {
