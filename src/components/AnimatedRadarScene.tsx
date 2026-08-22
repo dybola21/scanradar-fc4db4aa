@@ -11,29 +11,32 @@ interface AnimatedRadarSceneProps {
  */
 const BuildingIcon = ({ x, y, size = 6, delay, duration }: { x: number, y: number, size?: number, delay: number, duration: number }) => {
   return (
-    <g 
-      transform={`translate(${x - size / 2}, ${y - size / 2})`}
-      className="radar-detection"
-      style={{ 
-        animationDelay: `${delay}s`,
-        animationDuration: `${duration}s`
-      }}
-    >
-      <svg
-        width={size}
-        height={size}
-        viewBox="0 0 24 24"
-        fill="none"
-        xmlns="http://www.w3.org/2000/svg"
-        className="text-[#22C55E]"
+    <g transform={`translate(${x}, ${y})`}>
+      <g 
+        className="radar-detection"
+        style={{ 
+          animationDelay: `${delay}s`,
+          animationDuration: `${duration}s`
+        }}
       >
-        <path
-          d="M3 21h18M5 21V5a2 2 0 012-2h10a2 2 0 012 2v16M9 7h2m-2 4h2m-2 4h2m2-8h2m-2 4h2m-2 4h2"
-          stroke="currentColor"
-          strokeWidth="2"
-          strokeLinecap="round"
-        />
-      </svg>
+        <svg
+          x={-size / 2}
+          y={-size / 2}
+          width={size}
+          height={size}
+          viewBox="0 0 24 24"
+          fill="none"
+          xmlns="http://www.w3.org/2000/svg"
+          className="text-[#22C55E]"
+        >
+          <path
+            d="M3 21h18M5 21V5a2 2 0 012-2h10a2 2 0 012 2v16M9 7h2m-2 4h2m-2 4h2m2-8h2m-2 4h2m-2 4h2"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+          />
+        </svg>
+      </g>
     </g>
   );
 };
@@ -41,8 +44,7 @@ const BuildingIcon = ({ x, y, size = 6, delay, duration }: { x: number, y: numbe
 export function AnimatedRadarScene({ className, size = 400 }: AnimatedRadarSceneProps) {
   const rotationDuration = 5; // seconds per full rotation
 
-  // Detectable points with their coordinates and calculated angles for sync
-  // Distributing points inside the 48-radius circle
+  // Detectable points inside the 48-radius circle
   const points = useMemo(() => [
     { x: 72, y: 35 },
     { x: 32, y: 65 },
@@ -54,26 +56,22 @@ export function AnimatedRadarScene({ className, size = 400 }: AnimatedRadarScene
     { x: 65, y: 22 },
     { x: 40, y: 82 },
     { x: 55, y: 45 },
-    { x: 88, y: 48 },
-    { x: 15, y: 52 },
   ].map(p => {
     const dx = p.x - 50;
     const dy = p.y - 50;
-    
-    // Ensure the point is strictly inside the radar radius (48)
     const distance = Math.sqrt(dx * dx + dy * dy);
+    
+    // Ensure the point is strictly inside the radar radius (48) with margin
     let finalX = p.x;
     let finalY = p.y;
-    
-    if (distance > 45) {
-      const ratio = 45 / distance;
+    if (distance > 42) {
+      const ratio = 42 / distance;
       finalX = 50 + dx * ratio;
       finalY = 50 + dy * ratio;
     }
 
     const finalDx = finalX - 50;
     const finalDy = finalY - 50;
-    
     let angle = Math.atan2(finalDy, finalDx) * (180 / Math.PI) + 90;
     if (angle < 0) angle += 360;
     
@@ -93,6 +91,16 @@ export function AnimatedRadarScene({ className, size = 400 }: AnimatedRadarScene
         aria-hidden="true"
         xmlns="http://www.w3.org/2000/svg"
       >
+        <defs>
+          <clipPath id="radar-clip-path">
+            <circle cx="50" cy="50" r="48" />
+          </clipPath>
+          <linearGradient id="radarSweepGradient" x1="19.2" y1="13.2" x2="50" y2="2" gradientUnits="userSpaceOnUse">
+            <stop offset="0%" stopColor="#38BDF8" stopOpacity="0" />
+            <stop offset="100%" stopColor="#38BDF8" stopOpacity="0.4" />
+          </linearGradient>
+        </defs>
+
         <style>
           {`
             @keyframes scanRotate {
@@ -151,17 +159,19 @@ export function AnimatedRadarScene({ className, size = 400 }: AnimatedRadarScene
           <line x1="2" y1="50" x2="98" y2="50" className="radar-grid-line" />
         </g>
 
-        {/* Detected Icons */}
-        {points.map((p, i) => (
-          <BuildingIcon 
-            key={i} 
-            x={p.x} 
-            y={p.y} 
-            size={5} 
-            delay={p.delay} 
-            duration={rotationDuration} 
-          />
-        ))}
+        {/* Detected Icons clipped to radar area */}
+        <g clipPath="url(#radar-clip-path)">
+          {points.map((p, i) => (
+            <BuildingIcon 
+              key={i} 
+              x={p.x} 
+              y={p.y} 
+              size={5} 
+              delay={p.delay} 
+              duration={rotationDuration} 
+            />
+          ))}
+        </g>
 
         {/* Scanning Sweep */}
         <g className="radar-sweep-group">
@@ -183,13 +193,6 @@ export function AnimatedRadarScene({ className, size = 400 }: AnimatedRadarScene
         {/* Center Point */}
         <circle cx="50" cy="50" r="1.5" fill="#38BDF8" />
         <circle cx="50" cy="50" r="4" fill="#38BDF8" opacity="0.1" />
-
-        <defs>
-          <linearGradient id="radarSweepGradient" x1="19.2" y1="13.2" x2="50" y2="2" gradientUnits="userSpaceOnUse">
-            <stop offset="0%" stopColor="#38BDF8" stopOpacity="0" />
-            <stop offset="100%" stopColor="#38BDF8" stopOpacity="0.4" />
-          </linearGradient>
-        </defs>
       </svg>
     </div>
   );
