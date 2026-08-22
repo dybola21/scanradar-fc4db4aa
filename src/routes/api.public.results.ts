@@ -58,9 +58,11 @@ export const Route = createFileRoute('/api/public/results')({
         })
 
         if (rpcError) {
+          console.error(`[Callback] RPC Error for searchId: ${searchId}:`, rpcError);
           return new Response(JSON.stringify({ error: rpcError.message }), { status: 500 })
         }
 
+        console.log(`[Callback] Successfully processed results for searchId: ${searchId}`);
         return new Response(JSON.stringify({ success: true }), { headers: { 'Content-Type': 'application/json' } })
       }
     }
