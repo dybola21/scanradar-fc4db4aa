@@ -96,12 +96,12 @@ export default function AuthPage() {
             <span className="text-[24px] font-semibold tracking-tight text-[#F6F8FB]">ScanRadar</span>
           </div>
 
-          <div className="flex flex-1 flex-col items-center justify-center py-4 lg:py-8">
-            <div className="mb-2 lg:mb-6">
-              <AnimatedRadarScene size={400} />
+          <div className="flex flex-1 flex-col items-center justify-center py-2 lg:py-4">
+            <div className="mb-2 lg:mb-4">
+              <AnimatedRadarScene size={360} />
             </div>
 
-            <div className="max-w-[580px] space-y-4 text-center lg:space-y-6">
+            <div className="max-w-[580px] space-y-3 text-center lg:space-y-5">
               <h2 className="text-3xl font-bold tracking-tight text-[#F6F8FB] lg:text-5xl">
                 Encontre empresas antes que a oportunidade passe.
               </h2>
@@ -109,7 +109,7 @@ export default function AuthPage() {
                 Mapeie negócios locais, identifique presença digital e transforme dados públicos em prospecção organizada.
               </p>
 
-              <div className="flex flex-col items-center gap-2 pt-2 lg:gap-3 lg:pt-4">
+              <div className="flex flex-col items-center gap-2 pt-2 lg:gap-3 lg:pt-3">
                 {[
                   "Busca por nicho e localização",
                   "Classificação de presença digital",
