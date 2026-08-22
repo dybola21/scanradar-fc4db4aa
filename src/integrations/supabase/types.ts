@@ -22,6 +22,7 @@ export type Database = {
           email: string | null
           email2: string | null
           id: string
+          lead_key: string | null
           nome: string | null
           search_id: string
           telefone: string | null
@@ -35,6 +36,7 @@ export type Database = {
           email?: string | null
           email2?: string | null
           id?: string
+          lead_key?: string | null
           nome?: string | null
           search_id: string
           telefone?: string | null
@@ -48,6 +50,7 @@ export type Database = {
           email?: string | null
           email2?: string | null
           id?: string
+          lead_key?: string | null
           nome?: string | null
           search_id?: string
           telefone?: string | null
@@ -66,6 +69,7 @@ export type Database = {
       }
       n8n_settings: {
         Row: {
+          callback_secret_hash: string | null
           created_at: string
           id: string
           integration_name: string | null
@@ -78,6 +82,7 @@ export type Database = {
           webhook_url: string | null
         }
         Insert: {
+          callback_secret_hash?: string | null
           created_at?: string
           id?: string
           integration_name?: string | null
@@ -90,6 +95,7 @@ export type Database = {
           webhook_url?: string | null
         }
         Update: {
+          callback_secret_hash?: string | null
           created_at?: string
           id?: string
           integration_name?: string | null
@@ -174,6 +180,18 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      complete_search_with_leads: {
+        Args: {
+          p_error_message?: string
+          p_leads: Json
+          p_search_id: string
+          p_sheet_name?: string
+          p_sheet_url?: string
+          p_status: string
+          p_total_leads: number
+        }
+        Returns: undefined
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
