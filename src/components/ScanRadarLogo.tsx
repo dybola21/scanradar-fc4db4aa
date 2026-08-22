@@ -36,25 +36,26 @@ export function ScanRadarLogo({
       fill="none"
       xmlns="http://www.w3.org/2000/svg"
       className="shrink-0"
+      aria-hidden="true"
     >
       {/* Outer radar arc - incomplete for movement */}
       <path
-        d="M38 12.5C42.5 18.5 43.5 26.5 40 33.5C36.5 40.5 29.5 44 22 43C14.5 42 8.5 36.5 6.5 29.5C4.5 22.5 6.5 15.5 11 10"
+        d="M38.5 11.5C43.5 17.5 44.5 26.5 40.5 34.5C36.5 42.5 28.5 45.5 20.5 44C12.5 42.5 6.5 36.5 4.5 28.5C2.5 20.5 4.5 12.5 9.5 7.5"
         stroke={primaryBlue}
-        strokeWidth="2.8"
+        strokeWidth="3.2"
         strokeLinecap="round"
       />
       
       {/* Inner radar arc */}
       <path
-        d="M32 18C34.5 21.5 35 26.5 33 30.5C31 34.5 27 36.5 22.5 36C18 35.5 14.5 32 13.5 28C12.5 24 13.5 19.5 16 16.5"
+        d="M30 19C32 21.5 32.5 25.5 31.5 29C30.5 32.5 27.5 35 24 35.5C20.5 36 17 34 15.5 30.5C14 27 14.5 23 16.5 20.5"
         stroke={secondaryBlue}
-        strokeWidth="2.8"
+        strokeWidth="3.2"
         strokeLinecap="round"
       />
       
       {/* Center point */}
-      <circle cx="24" cy="24" r="2" fill={accentGreen} />
+      <circle cx="24" cy="24" r="2.2" fill={accentGreen} />
       
       {/* Scan line and detected company node */}
       <g>
@@ -64,16 +65,16 @@ export function ScanRadarLogo({
           x2="35"
           y2="13"
           stroke={primaryBlue}
-          strokeWidth="2.8"
+          strokeWidth="3.2"
           strokeLinecap="round"
         />
         {/* Company node (square with rounded corners) */}
         <rect
           x="33"
           y="11"
-          width="6"
-          height="6"
-          rx="1.5"
+          width="7"
+          height="7"
+          rx="2"
           fill={accentGreen}
         />
       </g>
