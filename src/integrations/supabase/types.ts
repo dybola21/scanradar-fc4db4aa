@@ -14,16 +14,176 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      leads: {
+        Row: {
+          bairro: string | null
+          cidade: string | null
+          created_at: string
+          email: string | null
+          email2: string | null
+          id: string
+          nome: string | null
+          search_id: string
+          telefone: string | null
+          uf: string | null
+          website: string | null
+        }
+        Insert: {
+          bairro?: string | null
+          cidade?: string | null
+          created_at?: string
+          email?: string | null
+          email2?: string | null
+          id?: string
+          nome?: string | null
+          search_id: string
+          telefone?: string | null
+          uf?: string | null
+          website?: string | null
+        }
+        Update: {
+          bairro?: string | null
+          cidade?: string | null
+          created_at?: string
+          email?: string | null
+          email2?: string | null
+          id?: string
+          nome?: string | null
+          search_id?: string
+          telefone?: string | null
+          uf?: string | null
+          website?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "leads_search_id_fkey"
+            columns: ["search_id"]
+            isOneToOne: false
+            referencedRelation: "searches"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      n8n_settings: {
+        Row: {
+          created_at: string
+          id: string
+          integration_name: string | null
+          is_connected: boolean | null
+          last_test_error: string | null
+          last_tested_at: string | null
+          updated_at: string
+          user_id: string
+          webhook_secret: string | null
+          webhook_url: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          integration_name?: string | null
+          is_connected?: boolean | null
+          last_test_error?: string | null
+          last_tested_at?: string | null
+          updated_at?: string
+          user_id: string
+          webhook_secret?: string | null
+          webhook_url?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          integration_name?: string | null
+          is_connected?: boolean | null
+          last_test_error?: string | null
+          last_tested_at?: string | null
+          updated_at?: string
+          user_id?: string
+          webhook_secret?: string | null
+          webhook_url?: string | null
+        }
+        Relationships: []
+      }
+      searches: {
+        Row: {
+          cidade: string
+          completed_at: string | null
+          created_at: string
+          error_message: string | null
+          id: string
+          request_id: string
+          sheet_name: string | null
+          sheet_url: string | null
+          status: string | null
+          termo: string
+          total_leads: number | null
+          uf: string
+          user_id: string
+        }
+        Insert: {
+          cidade: string
+          completed_at?: string | null
+          created_at?: string
+          error_message?: string | null
+          id?: string
+          request_id: string
+          sheet_name?: string | null
+          sheet_url?: string | null
+          status?: string | null
+          termo: string
+          total_leads?: number | null
+          uf: string
+          user_id: string
+        }
+        Update: {
+          cidade?: string
+          completed_at?: string | null
+          created_at?: string
+          error_message?: string | null
+          id?: string
+          request_id?: string
+          sheet_name?: string | null
+          sheet_url?: string | null
+          status?: string | null
+          termo?: string
+          total_leads?: number | null
+          uf?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      user_roles: {
+        Row: {
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          id?: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
     }
     Enums: {
-      [_ in never]: never
+      app_role: "admin" | "user"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -150,6 +310,8 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      app_role: ["admin", "user"],
+    },
   },
 } as const
