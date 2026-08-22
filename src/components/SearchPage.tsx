@@ -93,13 +93,12 @@ export default function SearchPage() {
       {integration && !integration.configured ? (
         <Alert className="rounded-2xl border-warning/30 bg-warning-soft">
           <AlertTriangle className="size-4 text-warning" />
-          <AlertTitle>Integração n8n não configurada</AlertTitle>
-          <AlertDescription>
-            Configure o webhook em{" "}
-            <Link to="/settings" className="font-medium underline">
-              Configurações
-            </Link>{" "}
-            antes de iniciar uma busca.
+          <AlertTitle>Integração n8n necessária</AlertTitle>
+          <AlertDescription className="space-y-3">
+            <p>Você precisa configurar o webhook do n8n antes de realizar qualquer busca no Google Maps.</p>
+            <Button asChild variant="outline" size="sm" className="h-9 rounded-lg border-warning/20 bg-warning/10 text-warning hover:bg-warning/20">
+              <Link to="/settings">Ir para Configurações</Link>
+            </Button>
           </AlertDescription>
         </Alert>
       ) : null}
