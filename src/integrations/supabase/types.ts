@@ -268,6 +268,13 @@ export type Database = {
         | "RESULTS_FETCHED"
         | "FRONTEND_ERROR"
         | "SYSTEM_ERROR"
+        | "FLOW_STARTED"
+        | "START_SEARCH_ENTERED"
+        | "AUTH_SUCCESS"
+        | "AUTH_ERROR"
+        | "SEARCH_INSERT_SUCCESS"
+        | "SEARCH_INSERT_ERROR"
+        | "N8N_REQUEST_ATTEMPT"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -409,6 +416,13 @@ export const Constants = {
         "RESULTS_FETCHED",
         "FRONTEND_ERROR",
         "SYSTEM_ERROR",
+        "FLOW_STARTED",
+        "START_SEARCH_ENTERED",
+        "AUTH_SUCCESS",
+        "AUTH_ERROR",
+        "SEARCH_INSERT_SUCCESS",
+        "SEARCH_INSERT_ERROR",
+        "N8N_REQUEST_ATTEMPT",
       ],
     },
   },
