@@ -128,7 +128,7 @@ export async function safeWebhookFetch(url: string, options: RequestInit = {}): 
   try {
     const response = await fetch(url, {
       ...options,
-      redirect: 'error', // Block automatic redirects
+      redirect: 'manual', // Use 'manual' instead of 'error' for edge compatibility; check status below
       signal: controller.signal,
     });
 
