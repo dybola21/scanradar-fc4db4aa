@@ -380,7 +380,7 @@ export const deleteSearch = createServerFn({ method: "POST" })
       .select("id")
       .eq("id", data.searchId)
       .eq("user_id", userId)
-      .single();
+      .maybeSingle();
 
     if (ownedError || !owned) throw new Error("Busca não encontrada");
 
