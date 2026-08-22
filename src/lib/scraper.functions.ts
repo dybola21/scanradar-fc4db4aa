@@ -212,6 +212,14 @@ export const startSearch = createServerFn({ method: "POST" })
 
     if (searchError) throw searchError;
 
+    await serverLogScanEvent({
+      searchId: searchRecord.id,
+      eventType: 'SEARCH_CREATED',
+      eventStatus: 'success',
+      message: `Busca criada no banco de dados: ${termo} em ${cidade}/${uf}`,
+      payload: { termo, cidade, uf, userId }
+    });
+
     try {
       const secret = settings.webhook_secret ? decrypt(settings.webhook_secret) : "";
       
