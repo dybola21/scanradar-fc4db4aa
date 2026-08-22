@@ -357,7 +357,8 @@ export const getSearchDetails = createServerFn({ method: "POST" })
       .maybeSingle();
 
     if (searchError) throw searchError;
-    if (!search) throw new Error("Busca não encontrada");
+    if (!search) return { search: null, leads: [] };
+
 
     const { data: leads, error: leadsError } = await supabase
       .from("leads")
