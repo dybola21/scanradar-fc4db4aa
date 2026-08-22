@@ -114,10 +114,12 @@ export const testIntegration = createServerFn({ method: "POST" })
       return { success: false, error: "Integração não configurada" };
     }
 
+    const webhookUrl = settings.webhook_url;
+
     try {
       const secret = settings.webhook_secret ? decrypt(settings.webhook_secret) : "";
       
-      const response = await safeWebhookFetch(settings.webhook_url, {
+      const response = await safeWebhookFetch(webhookUrl, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -304,17 +306,18 @@ export const startSearch = createServerFn({ method: "POST" })
       });
 
       const startTime = Date.now();
-      console.log(`[Scraper] Calling safeWebhookFetch to: ${settings.webhook_url}`);
+      const webhookUrl = settings.webhook_url;
+      console.log(`[Scraper] Calling safeWebhookFetch to: ${webhookUrl}`);
 
       await serverLogScanEvent({
         searchId: searchRecord.id,
         eventType: 'N8N_REQUEST_ATTEMPT',
         eventStatus: 'started',
         message: 'Tentando realizar fetch para o webhook do n8n',
-        payload: { url: settings.webhook_url }
+        payload: { url: webhookUrl }
       });
       
-      const response = await safeWebhookFetch(settings.webhook_url, {
+      const response = await safeWebhookFetch(webhookUrl, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
