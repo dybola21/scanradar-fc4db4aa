@@ -1,7 +1,7 @@
-import { useMemo, useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useMemo, useState, useEffect } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { getSearchDetails } from "@/lib/scraper.functions";
+import { getSearchDetails, checkSearchStatus } from "@/lib/scraper.functions";
 import { useParams, Link } from "@tanstack/react-router";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
@@ -20,6 +20,10 @@ import {
   AlertCircle,
   Copy,
   X,
+  RefreshCcw,
+  Loader2,
+  Clock,
+  AlertTriangle,
 } from "lucide-react";
 import { exportToCSV, exportToExcel } from "@/lib/export-utils";
 import { toast } from "sonner";
@@ -31,15 +35,20 @@ import { StatCard } from "@/components/ui-kit/StatCard";
 import { opportunityScore, PRESENCE_LABEL, PRESENCE_ORDER } from "@/lib/lead-insights";
 import { Target, Users, Globe, HelpCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { supabase } from "@/integrations/supabase/client";
 
 export default function ResultsPage() {
   const { searchId } = useParams({ from: "/_authenticated/results/$searchId" });
+  const queryClient = useQueryClient();
   const fetchDetails = useServerFn(getSearchDetails);
+  const checkStatusFn = useServerFn(checkSearchStatus);
 
   const [presenceFilter, setPresenceFilter] = useState("all");
   const [sortBy, setSortBy] = useState("opportunity");
   const [query, setQuery] = useState("");
   const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [isReconciling, setIsReconciling] = useState(false);
+
 
   const { data, isLoading } = useQuery({
     queryKey: ["search-details", searchId],
