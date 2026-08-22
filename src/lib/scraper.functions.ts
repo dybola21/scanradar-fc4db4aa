@@ -273,151 +273,44 @@ export const startSearch = createServerFn({ method: "POST" })
     });
 
     try {
-      console.log(`[Scraper] Preparing webhook request for search ${searchRecord.id}`);
+      console.log(`[Scraper] startSearch - DB Record ready: ${searchRecord.id}. Delegating to API route.`);
 
-      const secret = settings.webhook_secret ? decrypt(settings.webhook_secret) : "";
-      
-      const payload = { 
-        requestType: "search",
-        searchId: searchRecord.id,
-        termo, 
-        cidade, 
-        uf 
-      };
-
-      const webhookHeaders = {
-        "Content-Type": "application/json",
-        "Accept": "application/json",
-        "X-Webhook-Secret": secret ? "[PRESENT]" : "[MISSING]",
-        "X-Idempotency-Key": searchRecord.id,
-      };
-
-      await serverLogScanEvent({
-        searchId: searchRecord.id,
-        eventType: 'N8N_REQUEST_SENT',
-        eventStatus: 'started',
-        message: `Iniciando fetch para n8n: ${termo} em ${cidade}/${uf}`,
-        payload: { 
-          url: settings.webhook_url, 
-          payload,
-          headers: webhookHeaders,
-          timeout: "15s"
-        }
-      });
-
-      const startTime = Date.now();
-      const webhookUrl = settings.webhook_url!;
-      
-      console.log(`[Scraper] Starting fetch to: ${webhookUrl}`);
-      
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 15000);
-
-      let response: Response;
-      try {
-        response = await fetch(webhookUrl, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            "Accept": "application/json",
-            "X-Webhook-Secret": secret,
-            "X-Idempotency-Key": searchRecord.id,
-          },
-          body: JSON.stringify(payload),
-          signal: controller.signal,
-          redirect: 'manual',
-        });
-      } finally {
-        clearTimeout(timeoutId);
-      }
-
-      const durationMs = Date.now() - startTime;
-      console.log(`[Scraper] Webhook returned status: ${response.status} in ${durationMs}ms`);
-
-      
-      let nextStatus = "delivery_unknown";
-      let eventStatus: 'success' | 'failed' | 'warning' = 'success';
-
-      if (response.status >= 200 && response.status < 300) {
-        nextStatus = "processing";
-        eventStatus = 'success';
-      } else if (response.status === 401 || response.status === 403 || (response.status >= 400 && response.status < 500)) {
-        nextStatus = "failed";
-        eventStatus = 'failed';
-      } else {
-        eventStatus = 'warning';
-      }
-
-      const responseText = await response.clone().text().catch(() => "N/A");
-
-      await serverLogScanEvent({
-        searchId: searchRecord.id,
-        eventType: 'N8N_RESPONSE_RECEIVED',
-        eventStatus: eventStatus,
-        httpStatus: response.status,
-        durationMs,
-        message: `n8n respondeu com status ${response.status}`,
-        payload: { 
-          responsePreview: responseText.slice(0, 500),
-          status: response.status 
-        }
-      });
-
-      await supabase
-        .from("searches")
-        .update({ status: nextStatus })
-        .eq("id", searchRecord.id);
+      // Legacy support: We still return success here, but the actual dispatch 
+      // should now be handled by the frontend calling /api/public/start-search
+      // or we can trigger it from here if needed. 
+      // User requested "Substituir a arquitetura", and wants the frontend to call the API.
+      // So this server function will now only handle the DB creation part.
 
       return { 
         success: true, 
         searchId: searchRecord.id, 
-        status: nextStatus,
+        status: "queued",
         repeated: false 
       };
     } catch (err: any) {
-      console.error("[Scraper] Webhook execution error:", err);
-      const isTimeout = err.name === 'AbortError' || err.message?.includes('timeout');
-      const finalStatus = isTimeout ? "delivery_unknown" : "failed";
-      
-      await serverLogScanEvent({
-        searchId: searchRecord.id,
-        eventType: isTimeout ? 'N8N_TIMEOUT' : 'N8N_ERROR',
-        eventStatus: 'failed',
-        errorMessage: String(err),
-        message: isTimeout ? 'Tempo limite esgotado (15s) ao chamar n8n. Verifique se o n8n está configurado para "Respond Immediately".' : 'Erro técnico ao disparar webhook n8n',
-        payload: { errorName: err.name, errorMessage: err.message }
-      });
-
-      await supabase
-        .from("searches")
-        .update({ 
-          status: finalStatus, 
-          error_message: isTimeout ? "O n8n não respondeu ao aceite inicial dentro de 15s (timeout)." : String(err) 
-        })
-        .eq("id", searchRecord.id);
-
+      console.error("[Scraper] Legacy block error (should not be reached):", err);
       return { 
-        success: finalStatus !== "failed", 
+        success: false, 
         searchId: searchRecord.id, 
-        status: finalStatus,
-        error: finalStatus === "failed" ? String(err) : undefined
+        status: "failed",
+        error: String(err)
       };
     }
   } catch (globalError: any) {
     console.error("[Scraper] startSearch GLOBAL ERROR:", globalError);
     
-    // Log unexpected top-level failure
     await serverLogScanEvent({
       eventType: 'SYSTEM_ERROR',
       eventStatus: 'failed',
       errorMessage: String(globalError.message || globalError),
-      message: 'Erro inesperado na função startSearch',
+      message: 'Erro inesperado na função startSearch (DB setup)',
       payload: { errorName: globalError.name, stack: globalError.stack }
     });
     
     throw globalError;
   }
 });
+
 
 export const checkSearchStatus = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
