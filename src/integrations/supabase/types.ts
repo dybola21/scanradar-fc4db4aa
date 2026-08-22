@@ -115,6 +115,53 @@ export type Database = {
         }
         Relationships: []
       }
+      scan_logs: {
+        Row: {
+          created_at: string | null
+          duration_ms: number | null
+          error_message: string | null
+          event_status: Database["public"]["Enums"]["scan_event_status"]
+          event_type: Database["public"]["Enums"]["scan_event_type"]
+          http_status: number | null
+          id: string
+          message: string | null
+          payload: Json | null
+          search_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          duration_ms?: number | null
+          error_message?: string | null
+          event_status: Database["public"]["Enums"]["scan_event_status"]
+          event_type: Database["public"]["Enums"]["scan_event_type"]
+          http_status?: number | null
+          id?: string
+          message?: string | null
+          payload?: Json | null
+          search_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          duration_ms?: number | null
+          error_message?: string | null
+          event_status?: Database["public"]["Enums"]["scan_event_status"]
+          event_type?: Database["public"]["Enums"]["scan_event_type"]
+          http_status?: number | null
+          id?: string
+          message?: string | null
+          payload?: Json | null
+          search_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "scan_logs_search_id_fkey"
+            columns: ["search_id"]
+            isOneToOne: false
+            referencedRelation: "searches"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       searches: {
         Row: {
           cidade: string
@@ -208,6 +255,19 @@ export type Database = {
     }
     Enums: {
       app_role: "admin" | "user"
+      scan_event_status: "started" | "success" | "failed" | "warning"
+      scan_event_type:
+        | "SEARCH_CREATED"
+        | "N8N_REQUEST_SENT"
+        | "N8N_RESPONSE_RECEIVED"
+        | "N8N_TIMEOUT"
+        | "N8N_ERROR"
+        | "CALLBACK_RECEIVED"
+        | "CALLBACK_VALIDATED"
+        | "RESULTS_SAVED"
+        | "RESULTS_FETCHED"
+        | "FRONTEND_ERROR"
+        | "SYSTEM_ERROR"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -336,6 +396,20 @@ export const Constants = {
   public: {
     Enums: {
       app_role: ["admin", "user"],
+      scan_event_status: ["started", "success", "failed", "warning"],
+      scan_event_type: [
+        "SEARCH_CREATED",
+        "N8N_REQUEST_SENT",
+        "N8N_RESPONSE_RECEIVED",
+        "N8N_TIMEOUT",
+        "N8N_ERROR",
+        "CALLBACK_RECEIVED",
+        "CALLBACK_VALIDATED",
+        "RESULTS_SAVED",
+        "RESULTS_FETCHED",
+        "FRONTEND_ERROR",
+        "SYSTEM_ERROR",
+      ],
     },
   },
 } as const
