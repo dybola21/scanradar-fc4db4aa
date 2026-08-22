@@ -159,8 +159,24 @@ export const startSearch = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .validator(searchSchema)
   .handler(async ({ data, context }) => {
-    const { supabase, userId } = context;
-    console.log(`[Scraper] startSearch BEGIN - User: ${userId}`, data);
+    try {
+      const { supabase, userId } = context;
+      
+      await serverLogScanEvent({
+        eventType: 'START_SEARCH_ENTERED',
+        eventStatus: 'started',
+        message: 'Função startSearch iniciada no servidor',
+        payload: { ...data, userId }
+      });
+
+      await serverLogScanEvent({
+        eventType: 'AUTH_SUCCESS',
+        eventStatus: 'success',
+        message: 'Autenticação validada com sucesso',
+        payload: { userId }
+      });
+
+      console.log(`[Scraper] startSearch BEGIN - User: ${userId}`, data);
 
     const termo = data.termo.trim();
     const cidade = data.cidade.trim();
