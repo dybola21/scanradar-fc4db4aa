@@ -116,7 +116,7 @@ export const Route = createFileRoute('/api/public/results')({
 
           // Map leads from English to Portuguese names as expected by the RPC
           // Generate a deterministic lead_key if missing to ensure deduplication
-          const mappedLeads = (leads || []).map((lead: any) => {
+          const mappedLeads = (Array.isArray(leads) ? leads : []).map((lead: any) => {
             const nome = lead.name || lead.nome || 'N/A';
             const telefone = lead.phone || lead.telefone || '';
             const fallbackKey = `key_${searchId}_${nome}_${telefone}`.replace(/\s+/g, '_').toLowerCase();
