@@ -5,9 +5,24 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
-import { Chrome, ArrowRight, Eye, EyeOff } from "lucide-react";
+import { Chrome, ArrowRight, Eye, EyeOff, CheckCircle2 } from "lucide-react";
 import { lovable } from "@/integrations/lovable/index";
 import { AnimatedRadarLogo } from "./AnimatedRadarLogo";
+import { AnimatedRadarScene } from "./AnimatedRadarScene";
+
+/**
+ * Scoped colors for AuthPage to prevent global side effects:
+ * Right background: #F5F7FA
+ * Right Title: #0B1220
+ * Right Secondary text: #526174
+ * Card: #FFFFFF
+ * Inputs: #F3F6FA
+ * Borders: #D5DEE9
+ * Left Text: #F6F8FB
+ * Left Subtitle: #9FB1C7
+ * Accent Blue: #0369A1 (WCAG AA compliant with white text)
+ * Success Green: #22C55E
+ */
 
 export default function AuthPage() {
   const [email, setEmail] = useState("");
@@ -64,65 +79,80 @@ export default function AuthPage() {
   const busy = isLoading || isGoogleLoading;
 
   return (
-    <div className="flex min-h-dvh w-full overflow-hidden bg-scan-bg text-scan-text">
+    <div className="flex min-h-dvh w-full overflow-hidden bg-[#07111F]">
       {/* Left side: Hero & Radar (Hidden on mobile) */}
-      <div className="relative hidden w-1/2 flex-col items-center justify-center border-r border-scan-border bg-[#07111F] p-12 lg:flex">
-        <div className="absolute inset-0 z-0 opacity-40">
+      <div className="relative hidden w-[55%] flex-col items-center justify-center border-r border-[#263750] p-12 lg:flex">
+        <div className="absolute inset-0 z-0 opacity-20">
            {/* Abstract grid lines for map feel */}
-           <div className="absolute inset-0 bg-[linear-gradient(rgba(38,55,80,0.1)_1px,transparent_1px),linear-gradient(90deg,rgba(38,55,80,0.1)_1px,transparent_1px)] bg-[size:40px_40px]" />
+           <div className="absolute inset-0 bg-[linear-gradient(rgba(56,189,248,0.1)_1px,transparent_1px),linear-gradient(90deg,rgba(56,189,248,0.1)_1px,transparent_1px)] bg-[size:60px_60px]" />
         </div>
         
-        <div className="relative z-10 flex w-full max-w-lg flex-col items-center text-center">
-          <div className="mb-12">
-            <AnimatedRadarLogo variant="hero" size={400} />
+        <div className="relative z-10 flex w-full max-w-[580px] flex-col items-center text-center">
+          <div className="mb-6">
+            <AnimatedRadarScene size={420} />
           </div>
           
-          <h2 className="mb-4 text-4xl font-bold tracking-tight text-white lg:text-5xl">
-            Encontre empresas antes que a oportunidade passe.
-          </h2>
-          <p className="text-lg text-scan-text-muted">
-            Mapeie negócios locais, identifique presença digital e transforme dados públicos em prospecção organizada.
-          </p>
+          <div className="space-y-6">
+            <h2 className="text-4xl font-bold tracking-tight text-[#F6F8FB] lg:text-5xl">
+              Encontre empresas antes que a oportunidade passe.
+            </h2>
+            <p className="text-lg text-[#9FB1C7]">
+              Mapeie negócios locais, identifique presença digital e transforme dados públicos em prospecção organizada.
+            </p>
+            
+            <div className="flex flex-col items-center gap-3 pt-4">
+              {[
+                "Busca por nicho e localização",
+                "Classificação de presença digital",
+                "Resultados prontos para ação"
+              ].map((benefit, i) => (
+                <div key={i} className="flex items-center gap-2 text-[#F6F8FB]/80 text-sm">
+                  <CheckCircle2 className="h-4 w-4 text-[#22C55E]" />
+                  <span>{benefit}</span>
+                </div>
+              ))}
+            </div>
+          </div>
         </div>
       </div>
 
       {/* Right side: Auth Form */}
-      <div className="flex w-full flex-col items-center justify-center p-6 lg:w-1/2 lg:p-12">
-        <div className="w-full max-w-[400px]">
-          {/* Logo mobile-only or compact top */}
-          <div className="mb-8 flex flex-col items-center lg:items-start">
-            <div className="mb-4 flex items-center gap-2">
-              <div className="grid h-10 w-10 place-items-center rounded-xl bg-scan-accent">
+      <div className="flex w-full flex-col items-center justify-center bg-[#F5F7FA] p-6 lg:w-[45%] lg:p-12">
+        <div className="w-full max-w-[440px]">
+          {/* Header section aligned in column */}
+          <div className="mb-6 flex flex-col items-center lg:items-start">
+            <div className="mb-8 flex items-center gap-2">
+              <div className="grid h-10 w-10 place-items-center rounded-xl bg-[#0369A1]">
                 <AnimatedRadarLogo size={28} />
               </div>
-              <span className="text-2xl font-bold tracking-tight text-white">ScanRadar</span>
+              <span className="text-2xl font-bold tracking-tight text-[#0B1220]">ScanRadar</span>
             </div>
             
-            {/* Mobile Hero Text (Only visible on small screens) */}
+            {/* Mobile Hero (Only visible on small screens) */}
             <div className="block text-center lg:hidden">
               <div className="mb-6 flex justify-center">
-                <AnimatedRadarLogo variant="hero" size={200} />
+                <AnimatedRadarScene size={240} />
               </div>
-              <h2 className="mb-2 text-2xl font-bold text-white">
+              <h2 className="mb-2 text-2xl font-bold text-[#0B1220]">
                 Encontre empresas agora.
               </h2>
-              <p className="mb-8 text-sm text-scan-text-muted">
+              <p className="mb-8 text-sm text-[#526174]">
                 Transforme dados do Google Maps em leads qualificados.
               </p>
             </div>
 
-            <h1 className="text-3xl font-semibold tracking-tight text-white">
+            <h1 className="text-3xl font-bold tracking-tight text-[#0B1220]">
               {isSignUp ? "Crie sua conta" : "Bem-vindo de volta"}
             </h1>
-            <p className="mt-2 text-scan-text-muted">
+            <p className="mt-2 text-[#526174]">
               {isSignUp ? "Comece a prospectar leads hoje mesmo." : "Entre na sua conta para continuar suas buscas."}
             </p>
           </div>
 
-          <div className="space-y-6 rounded-2xl border border-scan-border bg-scan-surface p-8 shadow-2xl">
+          <div className="space-y-6 rounded-2xl border border-[#D5DEE9] bg-white p-8 shadow-sm">
             <form onSubmit={handleAuth} className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="email" className="text-sm font-medium text-scan-text-muted">E-mail</Label>
+                <Label htmlFor="email" className="text-sm font-medium text-[#526174]">E-mail</Label>
                 <Input
                   id="email"
                   type="email"
@@ -131,15 +161,15 @@ export default function AuthPage() {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   required
-                  className="h-12 rounded-xl border-scan-border bg-scan-field text-white placeholder:text-slate-600 focus:border-scan-accent focus:ring-scan-accent/20"
+                  className="h-12 rounded-xl border-[#D5DEE9] bg-[#F3F6FA] text-[#0B1220] placeholder:text-slate-400 focus:border-[#0369A1] focus:ring-[#0369A1]/20"
                 />
               </div>
               
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
-                  <Label htmlFor="password" translate="no" className="text-sm font-medium text-scan-text-muted">Senha</Label>
+                  <Label htmlFor="password" translate="no" className="text-sm font-medium text-[#526174]">Senha</Label>
                   {!isSignUp && (
-                    <button type="button" className="text-xs text-scan-accent hover:underline">
+                    <button type="button" className="text-xs text-[#0369A1] hover:underline">
                       Esqueci minha senha
                     </button>
                   )}
@@ -154,12 +184,12 @@ export default function AuthPage() {
                     onChange={(e) => setPassword(e.target.value)}
                     required
                     minLength={6}
-                    className="h-12 rounded-xl border-scan-border bg-scan-field pr-10 text-white placeholder:text-slate-600 focus:border-scan-accent focus:ring-scan-accent/20"
+                    className="h-12 rounded-xl border-[#D5DEE9] bg-[#F3F6FA] pr-10 text-[#0B1220] placeholder:text-slate-400 focus:border-[#0369A1] focus:ring-[#0369A1]/20"
                   />
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-white"
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-[#0B1220]"
                     aria-label={showPassword ? "Ocultar senha" : "Mostrar senha"}
                   >
                     {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
@@ -169,12 +199,12 @@ export default function AuthPage() {
 
               <Button 
                 type="submit" 
-                className="h-12 w-full rounded-xl bg-scan-accent font-semibold text-[#07111F] hover:bg-scan-accent/90" 
+                className="h-[50px] w-full rounded-xl bg-[#0369A1] font-semibold text-white hover:bg-[#0369A1]/90 focus:ring-2 focus:ring-[#0369A1] focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-all" 
                 disabled={busy}
               >
                 {isLoading ? (
                   <span className="flex items-center gap-2">
-                    <span className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
+                    <span className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
                     Processando...
                   </span>
                 ) : (
@@ -188,40 +218,40 @@ export default function AuthPage() {
 
             <div className="relative">
               <div className="absolute inset-0 flex items-center">
-                <span className="w-full border-t border-scan-border" />
+                <span className="w-full border-t border-[#D5DEE9]" />
               </div>
               <div className="relative flex justify-center text-xs uppercase">
-                <span className="bg-scan-surface px-2 text-scan-text-muted">ou continue com</span>
+                <span className="bg-white px-3 text-[#526174]">ou continue com</span>
               </div>
             </div>
 
             <Button
               variant="outline"
               type="button"
-              className="h-12 w-full rounded-xl border-scan-border bg-transparent font-medium text-white hover:bg-scan-field hover:text-white"
+              className="h-12 w-full rounded-xl border-[#D5DEE9] bg-white font-medium text-[#0B1220] hover:bg-[#F3F6FA] transition-colors"
               onClick={handleGoogleSignIn}
               disabled={busy}
             >
-              <Chrome className="mr-2 h-4 w-4" />
+              <Chrome className="mr-2 h-4 w-4 text-[#0B1220]" />
               {isGoogleLoading ? "Conectando..." : "Google"}
             </Button>
 
-            <div className="text-center">
+            <div className="text-center pt-2">
               <button
                 type="button"
                 onClick={() => setIsSignUp(!isSignUp)}
-                className="text-sm text-scan-text-muted transition-colors hover:text-white"
+                className="text-sm text-[#526174] transition-colors hover:text-[#0B1220]"
               >
                 {isSignUp ? (
-                  <>Já tem uma conta? <span className="font-semibold text-scan-accent">Entrar</span></>
+                  <>Já tem uma conta? <span className="font-semibold text-[#0369A1]">Entrar</span></>
                 ) : (
-                  <>Não tem uma conta? <span className="font-semibold text-scan-accent">Criar conta</span></>
+                  <>Não tem uma conta? <span className="font-semibold text-[#0369A1]">Criar conta</span></>
                 )}
               </button>
             </div>
           </div>
           
-          <p className="mt-8 text-center text-xs text-scan-text-muted">
+          <p className="mt-8 text-center text-xs text-[#526174]">
             Ao continuar, você concorda com nossos Termos de Serviço e Política de Privacidade.
           </p>
         </div>
