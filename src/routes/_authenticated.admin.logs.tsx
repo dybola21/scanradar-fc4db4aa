@@ -46,8 +46,9 @@ function AdminLogsPage() {
   const [searchFilter, setSearchFilter] = useState('');
   const [typeFilter, setTypeFilter] = useState<string>('all');
   const [expandedLogs, setExpandedLogs] = useState<Set<string>>(new Set());
+  const queryClient = useQueryClient();
 
-  const { data: logs, isLoading } = useQuery({
+  const { data: logs, isLoading, refetch, isRefetching } = useQuery({
     queryKey: ['admin-scan-logs', searchFilter, typeFilter],
     queryFn: async () => {
       let query = supabase
