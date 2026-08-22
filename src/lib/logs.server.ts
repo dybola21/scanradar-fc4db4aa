@@ -1,7 +1,7 @@
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 
 export async function serverLogScanEvent(data: {
-  searchId: string;
+  searchId?: string;
   eventType: string;
   eventStatus: 'started' | 'success' | 'failed' | 'warning';
   message?: string;
