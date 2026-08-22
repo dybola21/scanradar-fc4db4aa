@@ -159,8 +159,9 @@ export const startSearch = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .validator(searchSchema)
   .handler(async ({ data, context }) => {
-    console.log(`[Scraper] startSearch called by user ${context.userId} with data:`, data);
     const { supabase, userId } = context;
+    console.log(`[Scraper] startSearch BEGIN - User: ${userId}`, data);
+
     const termo = data.termo.trim();
     const cidade = data.cidade.trim();
     const uf = data.uf.toUpperCase();
@@ -192,8 +193,10 @@ export const startSearch = createServerFn({ method: "POST" })
       .single();
 
     if (settingsError || !settings?.webhook_url) {
-      throw new Error("Integração n8n não configurada");
+      console.error("[Scraper] n8n integration not configured or DB error:", settingsError);
+      throw new Error("Integração n8n não configurada no banco de dados.");
     }
+
 
     const requestId = crypto.randomUUID();
 
@@ -224,6 +227,8 @@ export const startSearch = createServerFn({ method: "POST" })
     });
 
     try {
+      console.log(`[Scraper] Preparing webhook request for search ${searchRecord.id}`);
+
       const secret = settings.webhook_secret ? decrypt(settings.webhook_secret) : "";
       
       const payload = { 
@@ -255,6 +260,8 @@ export const startSearch = createServerFn({ method: "POST" })
       });
 
       const startTime = Date.now();
+      console.log(`[Scraper] Calling safeWebhookFetch to: ${settings.webhook_url}`);
+
       
       const response = await safeWebhookFetch(settings.webhook_url, {
         method: "POST",
@@ -268,6 +275,8 @@ export const startSearch = createServerFn({ method: "POST" })
       });
 
       const durationMs = Date.now() - startTime;
+      console.log(`[Scraper] Webhook returned status: ${response.status} in ${durationMs}ms`);
+
       
       let nextStatus = "delivery_unknown";
       let eventStatus: 'success' | 'failed' | 'warning' = 'success';
