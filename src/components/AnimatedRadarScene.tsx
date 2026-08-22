@@ -28,11 +28,10 @@ const BuildingIcon = ({ x, y, size = 6, delay, duration }: { x: number, y: numbe
         className="text-[#22C55E]"
       >
         <path
-          d="M3 21H21M5 21V5C5 4.46957 5.21071 3.96086 5.58579 3.58579C5.96086 3.21071 6.46957 3 7 3H17C17.5304 3 18.0391 3.21071 18.4142 3.58579C18.7893 3.96086 19 4.46957 19 5V21M9 7H11M9 11H11M9 15H11M13 7H15M13 11H15M13 15H15"
+          d="M3 21h18M5 21V5a2 2 0 012-2h10a2 2 0 012 2v16M9 7h2m-2 4h2m-2 4h2m2-8h2m-2 4h2m-2 4h2"
           stroke="currentColor"
           strokeWidth="2"
           strokeLinecap="round"
-          strokeLinejoin="round"
         />
       </svg>
     </g>
@@ -52,16 +51,13 @@ export function AnimatedRadarScene({ className, size = 400 }: AnimatedRadarScene
     { x: 25, y: 35 },
     { x: 15, y: 70 },
   ].map(p => {
-    // Center is 50, 50.
     const dx = p.x - 50;
     const dy = p.y - 50;
-    // atan2 gives angle from positive x-axis. 
-    // Convert to angle from negative y-axis (top) clockwise.
     let angle = Math.atan2(dy, dx) * (180 / Math.PI) + 90;
     if (angle < 0) angle += 360;
     
-    // delay = (angle / 360) * duration
-    const delay = (angle / 360) * rotationDuration;
+    // Negative delay ensures the animation is in sync from t=0
+    const delay = ((angle / 360) * rotationDuration) - rotationDuration;
     
     return { ...p, angle, delay };
   }), [rotationDuration]);
@@ -90,10 +86,10 @@ export function AnimatedRadarScene({ className, size = 400 }: AnimatedRadarScene
             
             @keyframes detectionSequence {
               0% { opacity: 0; transform: scale(0.7); }
-              0.5% { opacity: 1; transform: scale(1.1); filter: drop-shadow(0 0 4px rgba(34, 197, 94, 0.6)); }
+              1% { opacity: 1; transform: scale(1.1); filter: drop-shadow(0 0 4px rgba(34, 197, 94, 0.6)); }
               5% { opacity: 1; transform: scale(1); filter: drop-shadow(0 0 2px rgba(34, 197, 94, 0.4)); }
-              25% { opacity: 1; transform: scale(1); filter: drop-shadow(0 0 1px rgba(34, 197, 94, 0.2)); }
-              35% { opacity: 0; transform: scale(0.9); }
+              20% { opacity: 1; transform: scale(1); filter: drop-shadow(0 0 1px rgba(34, 197, 94, 0.2)); }
+              30% { opacity: 0; transform: scale(0.9); }
               100% { opacity: 0; }
             }
 
@@ -150,7 +146,6 @@ export function AnimatedRadarScene({ className, size = 400 }: AnimatedRadarScene
         {/* Scanning Sweep */}
         <g className="radar-sweep-group">
           {/* Translucent sector (shadow) BEHIND the line */}
-          {/* A 40 degree sector. Line is at 0 deg (top), sector goes from -40 to 0. */}
           <path
             d="M 50 50 L 19.2 13.2 A 48 48 0 0 1 50 2 Z"
             fill="url(#radarSweepGradient)"
