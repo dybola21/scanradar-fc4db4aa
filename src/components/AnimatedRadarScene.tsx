@@ -1,11 +1,67 @@
 import { cn } from "@/lib/utils";
+import { useMemo } from "react";
 
 interface AnimatedRadarSceneProps {
   className?: string;
   size?: number;
 }
 
+/**
+ * SVG Building Silhouette
+ */
+const BuildingIcon = ({ x, y, size = 6, delay, duration }: { x: number, y: number, size?: number, delay: number, duration: number }) => {
+  return (
+    <g 
+      transform={`translate(${x - size / 2}, ${y - size / 2})`}
+      className="radar-detection"
+      style={{ 
+        animationDelay: `${delay}s`,
+        animationDuration: `${duration}s`
+      }}
+    >
+      <svg
+        width={size}
+        height={size}
+        viewBox="0 0 24 24"
+        fill="none"
+        xmlns="http://www.w3.org/2000/svg"
+        className="text-[#22C55E]"
+      >
+        <path
+          d="M3 21h18M5 21V5a2 2 0 012-2h10a2 2 0 012 2v16M9 7h2m-2 4h2m-2 4h2m2-8h2m-2 4h2m-2 4h2"
+          stroke="currentColor"
+          strokeWidth="2"
+          strokeLinecap="round"
+        />
+      </svg>
+    </g>
+  );
+};
+
 export function AnimatedRadarScene({ className, size = 400 }: AnimatedRadarSceneProps) {
+  const rotationDuration = 5; // seconds per full rotation
+
+  // Detectable points with their coordinates and calculated angles for sync
+  const points = useMemo(() => [
+    { x: 72, y: 28 },
+    { x: 32, y: 65 },
+    { x: 58, y: 78 },
+    { x: 45, y: 15 },
+    { x: 85, y: 60 },
+    { x: 25, y: 35 },
+    { x: 15, y: 70 },
+  ].map(p => {
+    const dx = p.x - 50;
+    const dy = p.y - 50;
+    let angle = Math.atan2(dy, dx) * (180 / Math.PI) + 90;
+    if (angle < 0) angle += 360;
+    
+    // Negative delay ensures the animation is in sync from t=0
+    const delay = ((angle / 360) * rotationDuration) - rotationDuration;
+    
+    return { ...p, angle, delay };
+  }), [rotationDuration]);
+
   return (
     <div 
       className={cn("flex items-center justify-center shrink-0 overflow-visible", className)}
@@ -25,27 +81,35 @@ export function AnimatedRadarScene({ className, size = 400 }: AnimatedRadarScene
             }
             .radar-sweep-group {
               transform-origin: 50px 50px;
-              animation: scanRotate 4s linear infinite;
+              animation: scanRotate ${rotationDuration}s linear infinite;
             }
+            
+            @keyframes detectionSequence {
+              0% { opacity: 0; transform: scale(0.7); }
+              1% { opacity: 1; transform: scale(1.1); filter: drop-shadow(0 0 4px rgba(34, 197, 94, 0.6)); }
+              5% { opacity: 1; transform: scale(1); filter: drop-shadow(0 0 2px rgba(34, 197, 94, 0.4)); }
+              20% { opacity: 1; transform: scale(1); filter: drop-shadow(0 0 1px rgba(34, 197, 94, 0.2)); }
+              30% { opacity: 0; transform: scale(0.9); }
+              100% { opacity: 0; }
+            }
+
+            .radar-detection {
+              opacity: 0;
+              animation: detectionSequence ${rotationDuration}s linear infinite;
+              transform-box: fill-box;
+              transform-origin: center;
+            }
+
             @media (prefers-reduced-motion: reduce) {
               .radar-sweep-group {
                 animation: none;
+                transform: rotate(45deg);
+              }
+              .radar-detection {
+                opacity: 0.8;
+                animation: none;
               }
             }
-            @keyframes blipPulse {
-              0% { opacity: 0.1; transform: scale(0.8); }
-              50% { opacity: 0.8; transform: scale(1.4); }
-              100% { opacity: 0.1; transform: scale(0.8); }
-            }
-            .radar-blip {
-              animation: blipPulse 3s ease-in-out infinite;
-              transform-box: fill-box;
-            }
-            .radar-blip-1 { animation-delay: 0s; transform-origin: center; }
-            .radar-blip-2 { animation-delay: 1s; transform-origin: center; }
-            .radar-blip-3 { animation-delay: 2s; transform-origin: center; }
-            .radar-blip-4 { animation-delay: 0.5s; transform-origin: center; }
-            .radar-blip-5 { animation-delay: 1.5s; transform-origin: center; }
             
             .radar-grid-line {
               stroke: rgba(56, 189, 248, 0.08);
@@ -65,26 +129,29 @@ export function AnimatedRadarScene({ className, size = 400 }: AnimatedRadarScene
           {/* Axis lines */}
           <line x1="50" y1="2" x2="50" y2="98" className="radar-grid-line" />
           <line x1="2" y1="50" x2="98" y2="50" className="radar-grid-line" />
-          
-          {/* Diagonal lines */}
-          <line x1="15" y1="15" x2="85" y2="85" className="radar-grid-line" />
-          <line x1="85" y1="15" x2="15" y2="85" className="radar-grid-line" />
         </g>
 
-        {/* Detected Points (Blips) */}
-        <circle cx="72" cy="28" r="1.5" fill="#22C55E" className="radar-blip radar-blip-1" />
-        <circle cx="32" cy="65" r="1.2" fill="#22C55E" className="radar-blip radar-blip-2" />
-        <circle cx="58" cy="78" r="1.4" fill="#22C55E" className="radar-blip radar-blip-3" />
-        <circle cx="45" cy="15" r="1.1" fill="#22C55E" className="radar-blip radar-blip-4" />
-        <circle cx="85" cy="60" r="1.3" fill="#22C55E" className="radar-blip radar-blip-5" />
+        {/* Detected Icons */}
+        {points.map((p, i) => (
+          <BuildingIcon 
+            key={i} 
+            x={p.x} 
+            y={p.y} 
+            size={6} 
+            delay={p.delay} 
+            duration={rotationDuration} 
+          />
+        ))}
 
         {/* Scanning Sweep */}
         <g className="radar-sweep-group">
+          {/* Translucent sector (shadow) BEHIND the line */}
           <path
-            d="M 50 50 L 50 2 A 48 48 0 0 1 83.9 15.9 Z"
+            d="M 50 50 L 19.2 13.2 A 48 48 0 0 1 50 2 Z"
             fill="url(#radarSweepGradient)"
             opacity="0.8"
           />
+          {/* Leading edge line */}
           <line 
             x1="50" y1="50" x2="50" y2="2" 
             stroke="#38BDF8" 
@@ -98,7 +165,7 @@ export function AnimatedRadarScene({ className, size = 400 }: AnimatedRadarScene
         <circle cx="50" cy="50" r="4" fill="#38BDF8" opacity="0.1" />
 
         <defs>
-          <linearGradient id="radarSweepGradient" x1="50" y1="50" x2="83.9" y2="15.9" gradientUnits="userSpaceOnUse">
+          <linearGradient id="radarSweepGradient" x1="19.2" y1="13.2" x2="50" y2="2" gradientUnits="userSpaceOnUse">
             <stop offset="0%" stopColor="#38BDF8" stopOpacity="0" />
             <stop offset="100%" stopColor="#38BDF8" stopOpacity="0.4" />
           </linearGradient>
