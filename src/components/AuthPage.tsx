@@ -81,27 +81,27 @@ export default function AuthPage() {
   return (
     <div className="flex min-h-dvh w-full overflow-hidden bg-[#07111F]">
       {/* Left side: Hero & Radar (Hidden on mobile) */}
-      <div className="relative hidden w-[55%] flex-col border-r border-[#263750] bg-[#07111F] p-8 lg:flex lg:p-12">
+      <div className="relative hidden w-[55%] flex-col border-r border-[#263750] bg-[#07111F] p-8 lg:flex lg:px-12 lg:py-10">
         <div className="absolute inset-0 z-0 opacity-20">
           {/* Abstract grid lines for map feel */}
           <div className="absolute inset-0 bg-[linear-gradient(rgba(56,189,248,0.1)_1px,transparent_1px),linear-gradient(90deg,rgba(56,189,248,0.1)_1px,transparent_1px)] bg-[size:60px_60px]" />
         </div>
 
-        <div className="relative z-10 mx-auto flex w-full max-w-[600px] flex-col">
+        <div className="relative z-10 mx-auto flex h-full w-full max-w-[600px] flex-col">
           {/* Logo at the top left of the container */}
-          <div className="mt-4 mb-8 flex items-center gap-3 lg:mt-6 lg:mb-12">
+          <div className="mb-8 flex items-center gap-3 lg:mb-12">
             <div className="grid h-9 w-9 place-items-center rounded-xl bg-[#0369A1]">
               <AnimatedRadarLogo size={24} />
             </div>
-            <span className="text-2xl font-semibold tracking-tight text-[#F6F8FB]">ScanRadar</span>
+            <span className="text-[24px] font-semibold tracking-tight text-[#F6F8FB]">ScanRadar</span>
           </div>
 
-          <div className="flex flex-col items-center">
-            <div className="mb-2">
-              <AnimatedRadarScene size={480} />
+          <div className="flex flex-1 flex-col items-center justify-center pb-12">
+            <div className="mb-4">
+              <AnimatedRadarScene size={440} />
             </div>
 
-            <div className="max-w-[580px] space-y-6 text-center">
+            <div className="max-w-[580px] space-y-5 text-center">
               <h2 className="text-4xl font-bold tracking-tight text-[#F6F8FB] lg:text-5xl">
                 Encontre empresas antes que a oportunidade passe.
               </h2>
@@ -109,7 +109,7 @@ export default function AuthPage() {
                 Mapeie negócios locais, identifique presença digital e transforme dados públicos em prospecção organizada.
               </p>
 
-              <div className="flex flex-col items-center gap-3 pt-4">
+              <div className="flex flex-col items-center gap-3 pt-2">
                 {[
                   "Busca por nicho e localização",
                   "Classificação de presença digital",
