@@ -69,7 +69,7 @@ export const updateIntegrationSettings = createServerFn({ method: "POST" })
     };
 
     if (webhook_secret) {
-      updateData.webhook_secret = webhook_secret;
+      updateData.webhook_secret = encrypt(webhook_secret);
     }
 
     const { error } = await supabase
@@ -99,11 +99,12 @@ export const testIntegration = createServerFn({ method: "POST" })
     }
 
     try {
-      const response = await fetch(settings.webhook_url, {
+      const secret = settings.webhook_secret ? decrypt(settings.webhook_secret) : "";
+      const response = await safeWebhookFetch(settings.webhook_url, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          "X-Webhook-Secret": settings.webhook_secret || "",
+          "X-Webhook-Secret": secret,
         },
         body: JSON.stringify({ test: true }),
       });
@@ -178,11 +179,12 @@ export const startSearch = createServerFn({ method: "POST" })
 
     try {
       // Call n8n
-      const response = await fetch(settings.webhook_url, {
+      const secret = settings.webhook_secret ? decrypt(settings.webhook_secret) : "";
+      const response = await safeWebhookFetch(settings.webhook_url, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          "X-Webhook-Secret": settings.webhook_secret || "",
+          "X-Webhook-Secret": secret,
         },
         body: JSON.stringify({ termo, cidade, uf }),
       });
