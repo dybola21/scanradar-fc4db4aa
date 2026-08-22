@@ -259,7 +259,7 @@ export default function DashboardLayout() {
                     <Menu className="size-5" />
                   </Button>
                 </SheetTrigger>
-                <SheetContent side="left" className="w-[280px] p-0">
+                <SheetContent side="left" className="w-[240px] p-0">
                   <div className="flex h-16 items-center gap-2.5 border-b border-border px-4">
                     <ScanRadarLogo size={28} theme="light" />
                   </div>
