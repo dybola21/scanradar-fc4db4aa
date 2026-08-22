@@ -109,19 +109,26 @@ export const Route = createFileRoute('/api/public/results')({
           });
 
           // Map leads from English to Portuguese names as expected by the RPC
-          const mappedLeads = (leads || []).map((lead: any) => ({
-            lead_key: lead.lead_key,
-            place_id: lead.place_id,
-            nome: lead.name || lead.nome,
-            telefone: lead.phone || lead.telefone,
-            endereco: lead.address || lead.endereco,
-            website: lead.website,
-            bairro: lead.bairro,
-            cidade: lead.cidade,
-            uf: lead.uf,
-            email: lead.email,
-            email2: lead.email2
-          }));
+          // Generate a deterministic lead_key if missing to ensure deduplication
+          const mappedLeads = (leads || []).map((lead: any) => {
+            const nome = lead.name || lead.nome || 'N/A';
+            const telefone = lead.phone || lead.telefone || '';
+            const fallbackKey = `key_${searchId}_${nome}_${telefone}`.replace(/\s+/g, '_').toLowerCase();
+            
+            return {
+              lead_key: lead.lead_key || fallbackKey,
+              place_id: lead.place_id,
+              nome,
+              telefone,
+              endereco: lead.address || lead.endereco,
+              website: lead.website,
+              bairro: lead.bairro,
+              cidade: lead.cidade,
+              uf: lead.uf,
+              email: lead.email,
+              email2: lead.email2
+            };
+          });
 
           // Transactional update via RPC
           const { error: rpcError } = await supabaseAdmin.rpc('complete_search_with_leads', {
