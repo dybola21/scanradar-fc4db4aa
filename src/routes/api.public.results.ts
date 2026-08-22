@@ -1,5 +1,5 @@
 import { createFileRoute } from '@tanstack/react-router'
-import { createClient } from '@supabase/supabase-js'
+
 import { verifySecret } from '@/lib/server/encryption'
 
 export const Route = createFileRoute('/api/public/results')({
