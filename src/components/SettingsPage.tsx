@@ -59,7 +59,7 @@ export default function Settings() {
     try {
       const result = await testFn();
       if (result.success) {
-        toast.success("Conexão com o n8n confirmada.");
+        toast.success("Integração testada com sucesso.");
         queryClient.invalidateQueries({ queryKey: ["n8n-settings"] });
         queryClient.invalidateQueries({ queryKey: ["integration-status"] });
       } else {

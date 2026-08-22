@@ -51,7 +51,7 @@ export const getIntegrationStatus = createServerFn({ method: "GET" })
 
 export const updateIntegrationSettings = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(
+  .validator(
     z.object({
       webhook_url: z.string().url("URL inválida"),
       webhook_secret: z.string().nullable().optional(),
@@ -100,38 +100,61 @@ export const testIntegration = createServerFn({ method: "POST" })
 
     try {
       const secret = settings.webhook_secret ? decrypt(settings.webhook_secret) : "";
+      
       const response = await safeWebhookFetch(settings.webhook_url, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
+          "Accept": "application/json",
           "X-Webhook-Secret": secret,
         },
-        body: JSON.stringify({ test: true }),
+        body: JSON.stringify({ 
+          requestType: "connection_test", 
+          test: true 
+        }),
       });
 
-      if (response.ok) {
+      if (response.status === 200 || response.status === 204) {
         await supabase
           .from("n8n_settings")
           .update({ is_connected: true })
           .eq("user_id", userId);
         return { success: true };
+      } else if (response.status === 401 || response.status === 403) {
+        return {
+          success: false,
+          error: "A chave de segurança foi recusada.",
+        };
       } else {
         return {
           success: false,
-          error: `Falha na conexão: ${response.status}`,
+          error: `O n8n retornou erro: ${response.status}`,
         };
       }
-    } catch (err) {
+    } catch (err: any) {
+      if (err.name === 'AbortError' || err.message?.includes('timeout')) {
+        return { success: false, error: "O n8n não respondeu dentro do tempo esperado." };
+      }
       return { success: false, error: "Erro ao conectar com o n8n" };
     }
   });
 
 export const startSearch = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(searchSchema)
+  .validator(searchSchema)
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
-    const { termo, cidade, uf } = data;
+    const termo = data.termo.trim();
+    const cidade = data.cidade.trim();
+    const uf = data.uf.toUpperCase();
+
+    if (!termo || !cidade || !uf) {
+      throw new Error("Preencha nicho, cidade e estado.");
+    }
+
+    if (uf.length !== 2) {
+      throw new Error("UF deve ter exatamente 2 letras.");
+    }
 
     // Check for ongoing identical searches
     const { data: ongoing } = await supabase
@@ -184,10 +207,21 @@ export const startSearch = createServerFn({ method: "POST" })
         method: "POST",
         headers: {
           "Content-Type": "application/json",
+          "Accept": "application/json",
           "X-Webhook-Secret": secret,
         },
-        body: JSON.stringify({ termo, cidade, uf }),
+        body: JSON.stringify({ 
+          requestType: "search",
+          test: false,
+          termo, 
+          cidade, 
+          uf 
+        }),
       });
+
+      if (response.status === 401 || response.status === 403) {
+        throw new Error("A chave de segurança foi recusada.");
+      }
 
       if (!response.ok) {
         const errorText = await response.text();
@@ -195,7 +229,7 @@ export const startSearch = createServerFn({ method: "POST" })
           .from("searches")
           .update({ status: "failed", error_message: errorText })
           .eq("id", searchRecord.id);
-        return { success: false, error: "n8n retornou erro", searchId: searchRecord.id };
+        return { success: false, error: "O n8n retornou um erro inesperado.", searchId: searchRecord.id };
       }
 
       const result = await response.json();
@@ -262,7 +296,7 @@ export const getSearchHistory = createServerFn({ method: "GET" })
 
 export const getSearchDetails = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(z.object({ searchId: z.string() }))
+  .validator(z.object({ searchId: z.string() }))
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
     const { searchId } = data;
@@ -288,7 +322,7 @@ export const getSearchDetails = createServerFn({ method: "POST" })
 
 export const deleteSearch = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(z.object({ searchId: z.string().uuid() }))
+  .validator(z.object({ searchId: z.string().uuid() }))
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
 
@@ -314,7 +348,7 @@ export const deleteSearch = createServerFn({ method: "POST" })
 
 export const getDashboardStats = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(
+  .validator(
     z.object({ days: z.union([z.literal(7), z.literal(30), z.literal(90), z.literal(0)]).default(30) }),
   )
   .handler(async ({ data, context }) => {
