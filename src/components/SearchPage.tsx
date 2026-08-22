@@ -40,10 +40,10 @@ export default function SearchPage() {
     mutationFn: (data: { termo: string; cidade: string; uf: string }) => startSearchFn({ data }),
     onSuccess: (result) => {
       if (result.success) {
-        toast.success("Busca concluída. Abrindo resultados.");
+        toast.success("Busca iniciada com sucesso.");
         navigate({ to: "/results/$searchId", params: { searchId: result.searchId } });
       } else {
-        toast.error(result.error ?? "Não foi possível concluir a busca.");
+        toast.error(result.error ?? "O n8n retornou um erro inesperado.");
       }
     },
     onError: (error: Error) => toast.error(error.message),
@@ -51,17 +51,32 @@ export default function SearchPage() {
 
   const validate = () => {
     const next: typeof errors = {};
-    if (termo.trim().length < 2) next.termo = "Informe o nicho ou tipo de empresa.";
-    if (cidade.trim().length < 2) next.cidade = "Informe a cidade.";
+    const t = termo.trim();
+    const c = cidade.trim();
+    
+    if (t.length < 2) next.termo = "Informe o nicho ou tipo de empresa.";
+    if (c.length < 2) next.cidade = "Informe a cidade.";
     if (!uf) next.uf = "Selecione o estado.";
+    
     setErrors(next);
-    return Object.keys(next).length === 0;
+    
+    if (Object.keys(next).length > 0) {
+      toast.error("Preencha nicho, cidade e estado.");
+      return false;
+    }
+    return true;
   };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    if (isPending) return;
     if (!validate()) return;
-    searchMutation.mutate({ termo: termo.trim(), cidade: cidade.trim(), uf });
+    
+    searchMutation.mutate({ 
+      termo: termo.trim(), 
+      cidade: cidade.trim(), 
+      uf: uf.toUpperCase() 
+    });
   };
 
   const repeatLast = () => {
@@ -212,8 +227,8 @@ export default function SearchPage() {
               className="min-h-11 rounded-xl px-6" 
               disabled={isPending || !integration?.configured}
             >
-              {isPending ? <Loader2 className="size-4 animate-spin" /> : <Search className="size-4" />}
-              {isPending ? "Buscando…" : "Iniciar busca"}
+              {isPending ? <Loader2 className="mr-2 size-4 animate-spin" /> : <Search className="mr-2 size-4" />}
+              {isPending ? "Iniciando…" : "Iniciar busca"}
             </Button>
           </div>
         </div>
