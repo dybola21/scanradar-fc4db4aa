@@ -114,16 +114,57 @@ export const Route = createFileRoute('/api/public/results')({
             message: 'Callback autenticado com sucesso'
           });
 
-          // Map leads from English to Portuguese names as expected by the RPC
-          // Generate a deterministic lead_key if missing to ensure deduplication
-          const mappedLeads = (Array.isArray(leads) ? leads : []).map((lead: any) => {
-            const nome = lead.name || lead.nome || 'N/A';
-            const telefone = lead.phone || lead.telefone || '';
-            const fallbackKey = `key_${searchId}_${nome}_${telefone}`.replace(/\s+/g, '_').toLowerCase();
+          // Normalize leads and handle deduplication to prevent PostgreSQL UPSERT errors
+          // (ON CONFLICT DO UPDATE command cannot affect row a second time)
+          const inputLeads = Array.isArray(leads) ? leads : [];
+          const uniqueLeads: any[] = [];
+          const seenKeys = new Set<string>();
+          const seenPlaceIds = new Set<string>();
+          const seenIdentities = new Set<string>();
+          
+          let duplicateCount = 0;
+
+          for (const lead of inputLeads) {
+            const nome = (lead.name || lead.nome || 'N/A').toString();
+            const telefone = (lead.phone || lead.telefone || '').toString();
+            const place_id = lead.place_id ? lead.place_id.toString() : null;
             
-            return {
-              lead_key: lead.lead_key || fallbackKey,
-              place_id: lead.place_id,
+            // Generate a deterministic lead_key if missing
+            const fallbackKey = `key_${searchId}_${nome}_${telefone}`.replace(/\s+/g, '_').toLowerCase();
+            const lead_key = lead.lead_key || fallbackKey;
+
+            // Identity combination for Priority 3
+            const identity = `${nome.trim().toLowerCase()}|${telefone.trim().toLowerCase()}`;
+            
+            let isDuplicate = false;
+            
+            // Check duplicates by priorities:
+            // 1. lead_key
+            if (lead_key && seenKeys.has(lead_key)) {
+              isDuplicate = true;
+            } 
+            // 2. place_id
+            else if (place_id && seenPlaceIds.has(place_id)) {
+              isDuplicate = true;
+            }
+            // 3. combinação nome + telefone
+            else if (seenIdentities.has(identity)) {
+              isDuplicate = true;
+            }
+
+            if (isDuplicate) {
+              duplicateCount++;
+              continue;
+            }
+
+            // Mark as seen
+            if (lead_key) seenKeys.add(lead_key);
+            if (place_id) seenPlaceIds.add(place_id);
+            seenIdentities.add(identity);
+
+            uniqueLeads.push({
+              lead_key: lead_key,
+              place_id: place_id,
               nome,
               telefone,
               endereco: lead.address || lead.endereco,
@@ -133,8 +174,14 @@ export const Route = createFileRoute('/api/public/results')({
               uf: lead.uf,
               email: lead.email,
               email2: lead.email2
-            };
-          });
+            });
+          }
+
+          const savedCount = uniqueLeads.length;
+          console.log(`[Callback] Dedup for searchId ${searchId}: received=${inputLeads.length}, removed=${duplicateCount}, saved=${savedCount}`);
+
+          // Map mappedLeads to uniqueLeads for the RPC call below
+          const mappedLeads = uniqueLeads;
 
           // Transactional update via RPC
           const { error: rpcError } = await supabaseAdmin.rpc('complete_search_with_leads', {
@@ -164,8 +211,14 @@ export const Route = createFileRoute('/api/public/results')({
             searchId,
             eventType: 'RESULTS_SAVED',
             eventStatus: 'success',
-            message: `Resultados salvos com sucesso: ${mappedLeads.length} leads processados`,
-            payload: { totalLeads, sheetName, sheetUrl }
+            message: `Resultados salvos com sucesso: ${savedCount} leads processados (${duplicateCount} duplicados removidos)`,
+            payload: { 
+              received_leads: inputLeads.length,
+              duplicate_removed: duplicateCount,
+              saved_leads: savedCount,
+              sheetName, 
+              sheetUrl 
+            }
           });
 
           console.log(`[Callback] Successfully processed results for searchId: ${searchId}`);
