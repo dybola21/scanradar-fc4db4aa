@@ -11,6 +11,7 @@ import {
   Plus,
   User,
   ChevronUp,
+  Activity,
 } from "lucide-react";
 import { ScanRadarLogo } from "./ScanRadarLogo";
 import { Button } from "@/components/ui/button";

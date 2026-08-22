@@ -16,6 +16,7 @@ import { Route as AuthenticatedDashboardRouteImport } from './routes/_authentica
 import { Route as AuthenticatedHistoryRouteImport } from './routes/_authenticated.history'
 import { Route as AuthenticatedSearchRouteImport } from './routes/_authenticated.search'
 import { Route as AuthenticatedSettingsRouteImport } from './routes/_authenticated.settings'
+import { Route as AuthenticatedAdminLogsRouteImport } from './routes/_authenticated.admin.logs'
 import { Route as AuthenticatedResultsSearchIdRouteImport } from './routes/_authenticated.results.$searchId'
 import { Route as ApiPublicResultsRouteImport } from './routes/api.public.results'
 import { Route as ApiPublicHooksScheduledTaskRouteImport } from './routes/api.public.hooks.scheduled-task'
@@ -54,6 +55,11 @@ const AuthenticatedSettingsRoute = AuthenticatedSettingsRouteImport.update({
   path: '/settings',
   getParentRoute: () => AuthenticatedRoute,
 } as any)
+const AuthenticatedAdminLogsRoute = AuthenticatedAdminLogsRouteImport.update({
+  id: '/admin/logs',
+  path: '/admin/logs',
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
 const AuthenticatedResultsSearchIdRoute =
   AuthenticatedResultsSearchIdRouteImport.update({
     id: '/results/$searchId',
@@ -79,6 +85,7 @@ export interface FileRoutesByFullPath {
   '/history': typeof AuthenticatedHistoryRoute
   '/search': typeof AuthenticatedSearchRoute
   '/settings': typeof AuthenticatedSettingsRoute
+  '/admin/logs': typeof AuthenticatedAdminLogsRoute
   '/results/$searchId': typeof AuthenticatedResultsSearchIdRoute
   '/api/public/results': typeof ApiPublicResultsRoute
   '/api/public/hooks/scheduled-task': typeof ApiPublicHooksScheduledTaskRoute
@@ -90,6 +97,7 @@ export interface FileRoutesByTo {
   '/history': typeof AuthenticatedHistoryRoute
   '/search': typeof AuthenticatedSearchRoute
   '/settings': typeof AuthenticatedSettingsRoute
+  '/admin/logs': typeof AuthenticatedAdminLogsRoute
   '/results/$searchId': typeof AuthenticatedResultsSearchIdRoute
   '/api/public/results': typeof ApiPublicResultsRoute
   '/api/public/hooks/scheduled-task': typeof ApiPublicHooksScheduledTaskRoute
@@ -103,6 +111,7 @@ export interface FileRoutesById {
   '/_authenticated/history': typeof AuthenticatedHistoryRoute
   '/_authenticated/search': typeof AuthenticatedSearchRoute
   '/_authenticated/settings': typeof AuthenticatedSettingsRoute
+  '/_authenticated/admin/logs': typeof AuthenticatedAdminLogsRoute
   '/_authenticated/results/$searchId': typeof AuthenticatedResultsSearchIdRoute
   '/api/public/results': typeof ApiPublicResultsRoute
   '/api/public/hooks/scheduled-task': typeof ApiPublicHooksScheduledTaskRoute
@@ -116,6 +125,7 @@ export interface FileRouteTypes {
     | '/history'
     | '/search'
     | '/settings'
+    | '/admin/logs'
     | '/results/$searchId'
     | '/api/public/results'
     | '/api/public/hooks/scheduled-task'
@@ -127,6 +137,7 @@ export interface FileRouteTypes {
     | '/history'
     | '/search'
     | '/settings'
+    | '/admin/logs'
     | '/results/$searchId'
     | '/api/public/results'
     | '/api/public/hooks/scheduled-task'
@@ -139,6 +150,7 @@ export interface FileRouteTypes {
     | '/_authenticated/history'
     | '/_authenticated/search'
     | '/_authenticated/settings'
+    | '/_authenticated/admin/logs'
     | '/_authenticated/results/$searchId'
     | '/api/public/results'
     | '/api/public/hooks/scheduled-task'
@@ -203,6 +215,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedSettingsRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    '/_authenticated/admin/logs': {
+      id: '/_authenticated/admin/logs'
+      path: '/admin/logs'
+      fullPath: '/admin/logs'
+      preLoaderRoute: typeof AuthenticatedAdminLogsRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
     '/_authenticated/results/$searchId': {
       id: '/_authenticated/results/$searchId'
       path: '/results/$searchId'
@@ -232,6 +251,7 @@ interface AuthenticatedRouteChildren {
   AuthenticatedHistoryRoute: typeof AuthenticatedHistoryRoute
   AuthenticatedSearchRoute: typeof AuthenticatedSearchRoute
   AuthenticatedSettingsRoute: typeof AuthenticatedSettingsRoute
+  AuthenticatedAdminLogsRoute: typeof AuthenticatedAdminLogsRoute
   AuthenticatedResultsSearchIdRoute: typeof AuthenticatedResultsSearchIdRoute
 }
 
@@ -240,6 +260,7 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedHistoryRoute: AuthenticatedHistoryRoute,
   AuthenticatedSearchRoute: AuthenticatedSearchRoute,
   AuthenticatedSettingsRoute: AuthenticatedSettingsRoute,
+  AuthenticatedAdminLogsRoute: AuthenticatedAdminLogsRoute,
   AuthenticatedResultsSearchIdRoute: AuthenticatedResultsSearchIdRoute,
 }
 
