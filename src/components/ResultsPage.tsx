@@ -444,8 +444,9 @@ export default function ResultsPage() {
                       <p className="truncate text-sm font-medium text-foreground">{lead.nome ?? "Sem nome"}</p>
                       <p className="flex items-center gap-1 truncate text-xs text-muted-foreground">
                         <MapPin className="size-3 shrink-0" />
-                        {[lead.bairro, lead.cidade, lead.uf].filter(Boolean).join(", ") || "—"}
+                        {lead.endereco || [lead.bairro, lead.cidade, lead.uf].filter(Boolean).join(", ") || "—"}
                       </p>
+
                     </TableCell>
                     <TableCell className="max-w-[240px] px-4 py-3">
                       <div className="space-y-0.5 text-sm">
