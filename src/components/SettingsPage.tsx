@@ -212,7 +212,7 @@ export default function Settings() {
               A chave fica armazenada com criptografia AES-256 no servidor.
             </p>
             <Button 
-              onClick={handleSave} 
+              type="submit" 
               className="min-h-11 rounded-xl px-6" 
               disabled={updateMutation.isPending || !webhookUrl || (webhookUrl === settings?.webhook_url && !webhookSecret)}
             >
@@ -220,7 +220,7 @@ export default function Settings() {
               Salvar configurações
             </Button>
           </div>
-        </div>
+        </form>
     </div>
   );
 }
