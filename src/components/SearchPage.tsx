@@ -40,10 +40,47 @@ export default function SearchPage() {
 
   const searchMutation = useMutation({
     mutationFn: async (data: { termo: string; cidade: string; uf: string }) => {
-      console.log("[Search] Calling startSearch server function...");
-      const response = await startSearchFn({ data });
-      console.log("[Search] Server function response:", response);
-      return response;
+      console.log("[Search] Step 1: Creating search record in database...");
+      const dbResponse = await startSearchFn({ data });
+      
+      if (!dbResponse.success || !dbResponse.searchId) {
+        throw new Error(dbResponse.error || "Falha ao criar registro de busca.");
+      }
+
+      if (dbResponse.status === 'repeated') {
+        return dbResponse;
+      }
+
+      console.log("[Search] Step 2: Triggering n8n via internal API route...", dbResponse.searchId);
+      
+      const apiResponse = await fetch('/api/public/start-search', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          searchId: dbResponse.searchId,
+          termo: data.termo,
+          cidade: data.cidade,
+          uf: data.uf,
+        }),
+      });
+
+      if (!apiResponse.ok) {
+        const errorData = await apiResponse.json().catch(() => ({ error: "Erro na chamada da API" }));
+        console.error("[Search] API Route error:", errorData);
+        // We return the dbResponse searchId anyway so user can see it in history,
+        // but we want to show the error if the trigger failed.
+        return { 
+          ...dbResponse, 
+          success: false, 
+          error: errorData.error || `Erro HTTP ${apiResponse.status}` 
+        };
+      }
+
+      const result = await apiResponse.json();
+      console.log("[Search] API Route success:", result);
+      return { ...dbResponse, ...result };
     },
 
     onSuccess: (result) => {
