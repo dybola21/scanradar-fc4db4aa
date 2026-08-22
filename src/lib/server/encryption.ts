@@ -22,16 +22,31 @@ export function encrypt(text: string): string {
 
 export function decrypt(hash: string): string {
   if (!hash) return '';
+  
+  // If the hash doesn't contain a colon, it's likely not encrypted (legacy data)
+  if (!hash.includes(':')) {
+    console.warn('[Encryption] Attempted to decrypt a string that is not in the expected format. Returning raw string.');
+    return hash;
+  }
+
   const key = getEncryptionKey();
   const [ivHex, encryptedHex] = hash.split(':');
+  
   if (!ivHex || !encryptedHex) {
-    throw new Error('Formato de hash de criptografia inválido');
+    console.warn('[Encryption] Invalid hash format. Returning raw string.');
+    return hash;
   }
-  const iv = Buffer.from(ivHex, 'hex');
-  const encrypted = Buffer.from(encryptedHex, 'hex');
-  const decipher = createDecipheriv(ALGORITHM, key, iv);
-  const decrypted = Buffer.concat([decipher.update(encrypted), decipher.final()]);
-  return decrypted.toString('utf8');
+  
+  try {
+    const iv = Buffer.from(ivHex, 'hex');
+    const encrypted = Buffer.from(encryptedHex, 'hex');
+    const decipher = createDecipheriv(ALGORITHM, key, iv);
+    const decrypted = Buffer.concat([decipher.update(encrypted), decipher.final()]);
+    return decrypted.toString('utf8');
+  } catch (error) {
+    console.error('[Encryption] Decryption failed:', error);
+    return hash;
+  }
 }
 
 /**

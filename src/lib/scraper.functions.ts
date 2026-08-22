@@ -114,10 +114,12 @@ export const testIntegration = createServerFn({ method: "POST" })
       return { success: false, error: "Integração não configurada" };
     }
 
+    const webhookUrl = settings.webhook_url!;
+
     try {
       const secret = settings.webhook_secret ? decrypt(settings.webhook_secret) : "";
       
-      const response = await safeWebhookFetch(settings.webhook_url, {
+      const response = await safeWebhookFetch(webhookUrl, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -202,15 +204,28 @@ export const startSearch = createServerFn({ method: "POST" })
       return { success: true, searchId: ongoing.id, status: ongoing.status, repeated: true };
     }
 
-    const { data: settings, error: settingsError } = await supabase
-      .from("n8n_settings")
-      .select("webhook_url, webhook_secret")
-      .eq("user_id", userId)
-      .single();
+    let settings;
+    try {
+      const { data, error: settingsError } = await supabase
+        .from("n8n_settings")
+        .select("webhook_url, webhook_secret")
+        .eq("user_id", userId)
+        .single();
 
-    if (settingsError || !settings?.webhook_url) {
-      console.error("[Scraper] n8n integration not configured or DB error:", settingsError);
-      throw new Error("Integração n8n não configurada no banco de dados.");
+      if (settingsError || !data?.webhook_url) {
+        throw new Error(settingsError?.message || "Integração n8n não configurada no banco de dados.");
+      }
+      settings = data;
+    } catch (configError: any) {
+      await serverLogScanEvent({
+        eventType: 'SYSTEM_ERROR',
+        eventStatus: 'failed',
+        errorMessage: String(configError.message || configError),
+        message: 'Falha ao recuperar configurações do n8n',
+        payload: { userId }
+      });
+      console.error("[Scraper] n8n configuration error:", configError);
+      throw configError;
     }
 
 
@@ -291,17 +306,18 @@ export const startSearch = createServerFn({ method: "POST" })
       });
 
       const startTime = Date.now();
-      console.log(`[Scraper] Calling safeWebhookFetch to: ${settings.webhook_url}`);
+      const webhookUrl = settings.webhook_url!;
+      console.log(`[Scraper] Calling safeWebhookFetch to: ${webhookUrl}`);
 
       await serverLogScanEvent({
         searchId: searchRecord.id,
         eventType: 'N8N_REQUEST_ATTEMPT',
         eventStatus: 'started',
         message: 'Tentando realizar fetch para o webhook do n8n',
-        payload: { url: settings.webhook_url }
+        payload: { url: webhookUrl }
       });
       
-      const response = await safeWebhookFetch(settings.webhook_url, {
+      const response = await safeWebhookFetch(webhookUrl, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -365,7 +381,7 @@ export const startSearch = createServerFn({ method: "POST" })
         eventType: isTimeout ? 'N8N_TIMEOUT' : 'N8N_ERROR',
         eventStatus: 'failed',
         errorMessage: String(err),
-        message: isTimeout ? 'Tempo limite esgotado (15s) ao chamar n8n' : 'Erro técnico ao disparar webhook n8n',
+        message: isTimeout ? 'Tempo limite esgotado (15s) ao chamar n8n. Verifique se o n8n está configurado para "Respond Immediately".' : 'Erro técnico ao disparar webhook n8n',
         payload: { errorName: err.name, errorMessage: err.message }
       });
 
