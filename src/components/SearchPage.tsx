@@ -40,7 +40,13 @@ export default function SearchPage() {
     mutationFn: (data: { termo: string; cidade: string; uf: string }) => startSearchFn({ data }),
     onSuccess: (result) => {
       if (result.success) {
-        toast.success("Busca iniciada com sucesso.");
+        if (result.status === 'repeated') {
+          toast.info("Esta busca já está sendo processada.");
+        } else if (result.status === 'delivery_unknown') {
+          toast.warning("Busca enviada, mas a confirmação do n8n está pendente. Verifique o status em instantes.");
+        } else {
+          toast.success("Busca iniciada com sucesso.");
+        }
         navigate({ to: "/results/$searchId", params: { searchId: result.searchId } });
       } else {
         toast.error(result.error ?? "O n8n retornou um erro inesperado.");
