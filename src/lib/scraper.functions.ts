@@ -6,6 +6,7 @@ import { buildPresenceDistribution, opportunityScore } from "./lead-insights";
 import { classifyWebsiteUrl } from "./website-utils";
 import { encrypt, decrypt, generateCallbackSecret, hashSecret } from "./server/encryption";
 import { safeWebhookFetch } from "./server/webhook-security";
+import { serverLogScanEvent } from "./logs.server";
 
 export const getIntegrationSettings = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
