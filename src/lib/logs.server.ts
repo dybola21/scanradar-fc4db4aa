@@ -34,15 +34,15 @@ export async function serverLogScanEvent(data: {
     }
   }
 
-  const logData = {
-    search_id: data.searchId,
+  const logData: any = {
+    search_id: data.searchId ?? null,
     event_type: data.eventType,
     event_status: data.eventStatus,
-    message: data.message,
+    message: data.message ?? null,
     payload: sanitizedPayload,
-    error_message: data.errorMessage,
-    http_status: data.httpStatus,
-    duration_ms: data.durationMs,
+    error_message: data.errorMessage ?? null,
+    http_status: data.httpStatus ?? null,
+    duration_ms: data.durationMs ?? null,
   };
 
   try {
@@ -52,7 +52,6 @@ export async function serverLogScanEvent(data: {
 
     if (error) {
       console.error("[Logs Server] Supabase insert error:", error);
-      // Fallback: console log the data since DB failed
       console.log("[Logs Server] Attempted log was:", JSON.stringify(logData));
     }
   } catch (err) {
