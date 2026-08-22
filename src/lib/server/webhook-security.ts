@@ -12,8 +12,11 @@ const resolve6 = promisify(dns.resolve6);
 function isPrivateIP(ip: string): boolean {
   // IPv4 Private & Reserved Ranges
   const ipv4Match = ip.match(/^(\d+)\.(\d+)\.(\d+)\.(\d+)$/);
-  if (ipv4Match) {
-    const [, b1, b2, b3, b4] = ipv4Match.map(Number);
+  if (ipv4Match && ipv4Match.length === 5) {
+    const b1 = parseInt(ipv4Match[1]!, 10);
+    const b2 = parseInt(ipv4Match[2]!, 10);
+    const b3 = parseInt(ipv4Match[3]!, 10);
+    const b4 = parseInt(ipv4Match[4]!, 10);
     
     // 0.0.0.0/8 (Local network)
     if (b1 === 0) return true;
