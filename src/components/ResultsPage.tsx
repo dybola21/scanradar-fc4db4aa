@@ -57,7 +57,7 @@ export default function ResultsPage() {
     queryFn: () => fetchDetails({ data: { searchId } }),
     // Only poll as fallback if terminal state not reached and realtime might have failed
     refetchInterval: (q) => {
-      const status = q.state.data?.search.status;
+      const status = q.state.data?.search?.status;
       return (status && !["completed", "failed"].includes(status)) ? 10000 : false;
     },
   });
