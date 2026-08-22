@@ -90,20 +90,20 @@ export default function AuthPage() {
           <div className="mb-4 grid h-16 w-16 place-items-center rounded-2xl bg-primary shadow-lg">
             <AnimatedRadarLogo size={38} />
           </div>
-          <h1 className="text-3xl font-semibold tracking-tight text-foreground">ScanRadar</h1>
-          <p className="mt-1 text-sm text-muted-foreground">Prospecção e geração de leads</p>
+          <h1 className="text-3xl font-semibold tracking-tight text-white">ScanRadar</h1>
+          <p className="mt-1 text-sm text-slate-400">Prospecção e geração de leads</p>
         </div>
 
-        <Card className="rounded-2xl border-border/60 shadow-sm">
+        <Card className="rounded-2xl border-white/10 bg-white/5 backdrop-blur-xl shadow-2xl">
           <CardHeader className="pb-2">
-            <CardTitle className="text-xl font-semibold tracking-tight">
+            <CardTitle className="text-xl font-semibold tracking-tight text-white">
               {isSignUp ? "Criar conta" : "Entrar"}
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-5">
             <form onSubmit={handleAuth} className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="email">E-mail</Label>
+                <Label htmlFor="email" className="text-slate-300">E-mail</Label>
                 <Input
                   id="email"
                   type="email"
@@ -112,11 +112,11 @@ export default function AuthPage() {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   required
-                  className="h-11 rounded-xl"
+                  className="h-11 rounded-xl bg-white/5 border-white/10 text-white placeholder:text-slate-500 focus:border-radar/50 focus:ring-radar/20"
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="password">Senha</Label>
+                <Label htmlFor="password" translate="no" className="text-slate-300">Senha</Label>
                 <Input
                   id="password"
                   type="password"
@@ -126,11 +126,11 @@ export default function AuthPage() {
                   onChange={(e) => setPassword(e.target.value)}
                   required
                   minLength={6}
-                  className="h-11 rounded-xl"
+                  className="h-11 rounded-xl bg-white/5 border-white/10 text-white placeholder:text-slate-500 focus:border-radar/50 focus:ring-radar/20"
                 />
               </div>
 
-              <Button type="submit" className="h-11 w-full rounded-xl font-medium" disabled={busy}>
+              <Button type="submit" className="h-11 w-full rounded-xl font-medium bg-radar hover:bg-radar/90 text-radar-foreground" disabled={busy}>
                 {isLoading ? (
                   "Entrando..."
                 ) : (
@@ -144,14 +144,14 @@ export default function AuthPage() {
 
             <div className="relative">
               <span className="absolute inset-0 flex items-center">
-                <span className="w-full border-t border-border/60" />
+                <span className="w-full border-t border-white/10" />
               </span>
-              <span className="relative mx-auto block w-fit bg-card px-3 text-xs text-muted-foreground">ou</span>
+              <span className="relative mx-auto block w-fit bg-transparent px-3 text-xs text-slate-500">ou</span>
             </div>
 
             <Button
               variant="outline"
-              className="h-11 w-full rounded-xl font-medium"
+              className="h-11 w-full rounded-xl font-medium border-white/10 bg-white/5 text-white hover:bg-white/10 hover:text-white"
               onClick={handleGoogleSignIn}
               disabled={busy}
               aria-label="Entrar com Google"
@@ -164,7 +164,7 @@ export default function AuthPage() {
             <button
               type="button"
               onClick={() => setIsSignUp(!isSignUp)}
-              className="min-h-11 text-sm text-muted-foreground transition-colors hover:text-foreground"
+              className="min-h-11 text-sm text-slate-400 transition-colors hover:text-white"
             >
               {isSignUp ? "Já tenho conta" : "Criar uma conta"}
             </button>
