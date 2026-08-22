@@ -19,6 +19,7 @@ import { Route as AuthenticatedSettingsRouteImport } from './routes/_authenticat
 import { Route as AuthenticatedAdminLogsRouteImport } from './routes/_authenticated.admin.logs'
 import { Route as AuthenticatedResultsSearchIdRouteImport } from './routes/_authenticated.results.$searchId'
 import { Route as ApiPublicResultsRouteImport } from './routes/api.public.results'
+import { Route as ApiPublicStartSearchRouteImport } from './routes/api.public.start-search'
 import { Route as ApiPublicHooksScheduledTaskRouteImport } from './routes/api.public.hooks.scheduled-task'
 
 const IndexRoute = IndexRouteImport.update({
@@ -71,6 +72,11 @@ const ApiPublicResultsRoute = ApiPublicResultsRouteImport.update({
   path: '/api/public/results',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicStartSearchRoute = ApiPublicStartSearchRouteImport.update({
+  id: '/api/public/start-search',
+  path: '/api/public/start-search',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiPublicHooksScheduledTaskRoute =
   ApiPublicHooksScheduledTaskRouteImport.update({
     id: '/api/public/hooks/scheduled-task',
@@ -88,6 +94,7 @@ export interface FileRoutesByFullPath {
   '/admin/logs': typeof AuthenticatedAdminLogsRoute
   '/results/$searchId': typeof AuthenticatedResultsSearchIdRoute
   '/api/public/results': typeof ApiPublicResultsRoute
+  '/api/public/start-search': typeof ApiPublicStartSearchRoute
   '/api/public/hooks/scheduled-task': typeof ApiPublicHooksScheduledTaskRoute
 }
 export interface FileRoutesByTo {
@@ -100,6 +107,7 @@ export interface FileRoutesByTo {
   '/admin/logs': typeof AuthenticatedAdminLogsRoute
   '/results/$searchId': typeof AuthenticatedResultsSearchIdRoute
   '/api/public/results': typeof ApiPublicResultsRoute
+  '/api/public/start-search': typeof ApiPublicStartSearchRoute
   '/api/public/hooks/scheduled-task': typeof ApiPublicHooksScheduledTaskRoute
 }
 export interface FileRoutesById {
@@ -114,6 +122,7 @@ export interface FileRoutesById {
   '/_authenticated/admin/logs': typeof AuthenticatedAdminLogsRoute
   '/_authenticated/results/$searchId': typeof AuthenticatedResultsSearchIdRoute
   '/api/public/results': typeof ApiPublicResultsRoute
+  '/api/public/start-search': typeof ApiPublicStartSearchRoute
   '/api/public/hooks/scheduled-task': typeof ApiPublicHooksScheduledTaskRoute
 }
 export interface FileRouteTypes {
@@ -128,6 +137,7 @@ export interface FileRouteTypes {
     | '/admin/logs'
     | '/results/$searchId'
     | '/api/public/results'
+    | '/api/public/start-search'
     | '/api/public/hooks/scheduled-task'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -140,6 +150,7 @@ export interface FileRouteTypes {
     | '/admin/logs'
     | '/results/$searchId'
     | '/api/public/results'
+    | '/api/public/start-search'
     | '/api/public/hooks/scheduled-task'
   id:
     | '__root__'
@@ -153,6 +164,7 @@ export interface FileRouteTypes {
     | '/_authenticated/admin/logs'
     | '/_authenticated/results/$searchId'
     | '/api/public/results'
+    | '/api/public/start-search'
     | '/api/public/hooks/scheduled-task'
   fileRoutesById: FileRoutesById
 }
@@ -161,6 +173,7 @@ export interface RootRouteChildren {
   AuthenticatedRoute: typeof AuthenticatedRouteWithChildren
   AuthRoute: typeof AuthRoute
   ApiPublicResultsRoute: typeof ApiPublicResultsRoute
+  ApiPublicStartSearchRoute: typeof ApiPublicStartSearchRoute
   ApiPublicHooksScheduledTaskRoute: typeof ApiPublicHooksScheduledTaskRoute
 }
 
@@ -236,6 +249,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicResultsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/start-search': {
+      id: '/api/public/start-search'
+      path: '/api/public/start-search'
+      fullPath: '/api/public/start-search'
+      preLoaderRoute: typeof ApiPublicStartSearchRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/hooks/scheduled-task': {
       id: '/api/public/hooks/scheduled-task'
       path: '/api/public/hooks/scheduled-task'
@@ -273,6 +293,7 @@ const rootRouteChildren: RootRouteChildren = {
   AuthenticatedRoute: AuthenticatedRouteWithChildren,
   AuthRoute: AuthRoute,
   ApiPublicResultsRoute: ApiPublicResultsRoute,
+  ApiPublicStartSearchRoute: ApiPublicStartSearchRoute,
   ApiPublicHooksScheduledTaskRoute: ApiPublicHooksScheduledTaskRoute,
 }
 export const routeTree = rootRouteImport
