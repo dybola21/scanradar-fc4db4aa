@@ -51,7 +51,7 @@ export const getIntegrationStatus = createServerFn({ method: "GET" })
 
 export const updateIntegrationSettings = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(
+  .validator(
     z.object({
       webhook_url: z.string().url("URL inválida"),
       webhook_secret: z.string().nullable().optional(),
@@ -141,7 +141,7 @@ export const testIntegration = createServerFn({ method: "POST" })
 
 export const startSearch = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(searchSchema)
+  .validator(searchSchema)
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
     const termo = data.termo.trim();
@@ -296,7 +296,7 @@ export const getSearchHistory = createServerFn({ method: "GET" })
 
 export const getSearchDetails = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(z.object({ searchId: z.string() }))
+  .validator(z.object({ searchId: z.string() }))
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
     const { searchId } = data;
@@ -322,7 +322,7 @@ export const getSearchDetails = createServerFn({ method: "POST" })
 
 export const deleteSearch = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(z.object({ searchId: z.string().uuid() }))
+  .validator(z.object({ searchId: z.string().uuid() }))
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
 
@@ -348,7 +348,7 @@ export const deleteSearch = createServerFn({ method: "POST" })
 
 export const getDashboardStats = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(
+  .validator(
     z.object({ days: z.union([z.literal(7), z.literal(30), z.literal(90), z.literal(0)]).default(30) }),
   )
   .handler(async ({ data, context }) => {
