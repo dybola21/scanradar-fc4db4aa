@@ -26,11 +26,35 @@ export const Route = createFileRoute('/api/public/results')({
 
           const { searchId, status, totalLeads, leads, sheetName, sheetUrl, message } = body
 
+          if (searchId) {
+            await serverLogScanEvent({
+              searchId,
+              eventType: 'CALLBACK_RECEIVED',
+              eventStatus: 'started',
+              message: `Callback do n8n recebido via POST /api/public/results`,
+              payload: { 
+                headers: Object.fromEntries(request.headers.entries()),
+                body: { ...body, leads: `[${leads?.length || 0} leads]` }
+              }
+            });
+          }
+
           console.log(`[Callback] Received results for searchId: ${searchId}, status: ${status}, leads: ${leads?.length || 0}`);
 
           if (!secret || !searchId) {
-            console.warn(`[Callback] Missing headers or searchId. Secret present: ${!!secret}, searchId: ${searchId}`);
-            return jsonResponse({ success: false, error: 'Missing x-callback-secret header or searchId' }, 400);
+            const errorMsg = 'Missing x-callback-secret header or searchId';
+            console.warn(`[Callback] ${errorMsg}. Secret present: ${!!secret}, searchId: ${searchId}`);
+            
+            if (searchId) {
+              await serverLogScanEvent({
+                searchId,
+                eventType: 'SYSTEM_ERROR',
+                eventStatus: 'failed',
+                errorMessage: errorMsg,
+                message: 'Falha na validação inicial do callback'
+              });
+            }
+            return jsonResponse({ success: false, error: errorMsg }, 400);
           }
 
           const { supabaseAdmin } = await import('@/integrations/supabase/client.server')
@@ -43,8 +67,17 @@ export const Route = createFileRoute('/api/public/results')({
             .single()
 
           if (searchError || !search) {
-            console.error(`[Callback] Search record not found for searchId: ${searchId}`);
-            return jsonResponse({ success: false, error: 'Search not found' }, 404);
+            const errorMsg = 'Search not found';
+            console.error(`[Callback] ${errorMsg} for searchId: ${searchId}`);
+            
+            await serverLogScanEvent({
+              searchId,
+              eventType: 'SYSTEM_ERROR',
+              eventStatus: 'failed',
+              errorMessage: errorMsg,
+              message: 'Tentativa de callback para uma busca inexistente'
+            });
+            return jsonResponse({ success: false, error: errorMsg }, 404);
           }
 
           // Get settings to verify callback secret
@@ -55,11 +88,25 @@ export const Route = createFileRoute('/api/public/results')({
             .single()
 
           if (!settings?.callback_secret_hash || !verifySecret(secret, settings.callback_secret_hash)) {
-            console.error(`[Callback] Unauthorized secret for searchId: ${searchId}`);
-            return jsonResponse({ success: false, error: 'Invalid callback secret' }, 401);
+            const errorMsg = 'Invalid callback secret';
+            console.error(`[Callback] ${errorMsg} for searchId: ${searchId}`);
+            
+            await serverLogScanEvent({
+              searchId,
+              eventType: 'SYSTEM_ERROR',
+              eventStatus: 'failed',
+              errorMessage: errorMsg,
+              message: 'Falha na autenticação do callback (segredo inválido)'
+            });
+            return jsonResponse({ success: false, error: errorMsg }, 401);
           }
 
-
+          await serverLogScanEvent({
+            searchId,
+            eventType: 'CALLBACK_VALIDATED',
+            eventStatus: 'success',
+            message: 'Callback autenticado com sucesso'
+          });
 
           // Map leads from English to Portuguese names as expected by the RPC
           const mappedLeads = (leads || []).map((lead: any) => ({
@@ -89,13 +136,40 @@ export const Route = createFileRoute('/api/public/results')({
 
           if (rpcError) {
             console.error(`[Callback] RPC Error for searchId: ${searchId}:`, rpcError);
+            
+            await serverLogScanEvent({
+              searchId,
+              eventType: 'SYSTEM_ERROR',
+              eventStatus: 'failed',
+              errorMessage: rpcError.message,
+              message: 'Erro ao persistir resultados no banco de dados (RPC complete_search_with_leads)'
+            });
             return jsonResponse({ success: false, error: rpcError.message }, 500);
           }
+
+          await serverLogScanEvent({
+            searchId,
+            eventType: 'RESULTS_SAVED',
+            eventStatus: 'success',
+            message: `Resultados salvos com sucesso: ${mappedLeads.length} leads processados`,
+            payload: { totalLeads, sheetName, sheetUrl }
+          });
 
           console.log(`[Callback] Successfully processed results for searchId: ${searchId}`);
           return jsonResponse({ success: true, message: 'Results received', scanId: searchId });
         } catch (error: any) {
           console.error('[Callback] Critical error:', error);
+          
+          const searchId = (body as any)?.searchId;
+          if (searchId) {
+            await serverLogScanEvent({
+              searchId,
+              eventType: 'SYSTEM_ERROR',
+              eventStatus: 'failed',
+              errorMessage: error.message || 'Internal server error',
+              message: 'Erro crítico inesperado no endpoint de callback'
+            });
+          }
           return jsonResponse({ success: false, error: error.message || 'Internal server error' }, 500);
         }
       }
