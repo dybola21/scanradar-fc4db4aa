@@ -1,38 +1,42 @@
-# Plano de Correção: Integração n8n e Erro AbortError (v2)
+# Plano de Correção: Integração n8n e Erro AbortError (v3)
 
-Após auditoria técnica, identifiquei:
-- **Response Mode Atual**: Síncrono (aguarda extração completa no corpo da resposta).
-- **Localização do Timeout**: `src/lib/server/webhook-security.ts:126` (10 segundos).
-- **Retorno de Resultados**: Diretamente no corpo da resposta HTTP da Server Function.
+## 1. Infraestrutura e Fluxo Assíncrono
+- **Timeout**: Reduzir para um valor curto e configurável (ex: 15s) para o aceite inicial, já que o n8n será configurado para `Respond Immediately`.
+- **Idempotência Real**: 
+    - `searchId` (UUID) como chave única no banco de dados.
+    - Envio do header `X-Idempotency-Key` ao n8n.
+    - O n8n deve validar o `searchId` no início do workflow.
 
-## 1. Infraestrutura de Rede e Segurança
-- **Timeout**: Aumentar para 30s no servidor para garantir a entrega do comando, mas orientar o n8n a responder imediatamente.
-- **Auditoria**: Adicionar logs server-side contendo `searchId`, `requestType`, duração e status HTTP, sem vazar segredos.
-- **SSRF**: Manter proteção com `safeWebhookFetch`.
+## 2. Refatoração da Server Function `startSearch`
+- A função criará o registro como `queued`, enviará a requisição ao n8n e retornará imediatamente após o aceite (HTTP 2xx).
+- Se o aceite falhar (timeout/rede), o status mudará para `delivery_unknown`.
+- Se o aceite for bem-sucedido, o status mudará para `processing`.
 
-## 2. Fluxo de Busca Assíncrona e Idempotência
-- **Banco de Dados**: Atualizar a restrição da tabela `searches` para incluir os status `queued` e `delivery_unknown`.
-- **Idempotência**: Garantir que o `searchId` (UUID) seja usado como chave de idempotência no envio ao n8n via header `X-Idempotency-Key`.
-- **Refatoração `startSearch`**:
-    1. Criar registro como `queued`.
-    2. Enviar para o n8n e aguardar apenas o aceite (HTTP 2xx).
-    3. Se aceito, mudar para `processing` e retornar ao frontend.
-    4. Se houver timeout/erro de rede após o envio, mudar para `delivery_unknown`.
+## 3. Callback HTTP Robusto e Transacional
+- **Endpoint**: Criar uma Server Route (`src/routes/api.public.results.ts`) usando `createFileRoute` com handlers `POST`.
+- **Segurança**: Protegido por segredo exclusivo de callback, limite de tamanho e validação Zod.
+- **Transacionalidade**: Implementar uma função RPC no banco (Supabase) que realize em uma única transação:
+    1. Validar a existência e o status da busca.
+    2. Realizar `upsert` dos leads (usando restrição única de `search_id` + `place_id`/`url`).
+    3. Atualizar metadados (planilha, total).
+    4. Mudar status para `completed` ou `failed`.
+- **Estados**: O callback aceitará `completed`, `failed` (com erro seguro) e `partial`.
 
-## 3. Entrega de Resultados (Callback)
-- **Novo Endpoint**: Criar `src/routes/api.public.results.ts` (Webhook de Callback).
-- **Segurança**: Protegido por um segredo de callback exclusivo (recuperado no servidor) e validação de schema Zod.
-- **Processamento**: O endpoint receberá os leads do n8n, salvará na tabela `leads` e marcará a busca como `completed`.
+## 4. Acompanhamento no Frontend
+- Utilizar **Supabase Realtime** no componente de resultados para ouvir mudanças no registro da busca e na tabela de leads, garantindo atualização instantânea sem polling.
 
-## 4. Teste de Conexão e Refinamento de UI
-- **Teste**: Usar ramificação curta no n8n (sem extração) e aceitar qualquer resposta 2xx.
-- **UI**: 
-    - Substituir `AbortError` por mensagens amigáveis ("Não foi possível confirmar o recebimento...").
-    - Bloquear duplo clique durante o envio.
-    - Notificar "Busca iniciada e sendo processada" após o aceite do webhook.
+## 5. UI e Feedback
+- Toasts: "Busca iniciada e sendo processada."
+- Bloqueio de cliques duplos durante o `mutate`.
+- Substituir `AbortError` por: "Não foi possível confirmar o recebimento. Verifique o histórico antes de tentar novamente."
 
-## 5. Ajustes no n8n (Manual pelo Usuário)
-- Configurar o nó Webhook para `Response Mode: Respond Immediately`.
-- Implementar ramificação para `requestType: "connection_test"`.
-- Enviar os resultados para o novo endpoint de callback ao finalizar.
+## 6. Ajustes no n8n (Manual pelo Usuário)
+- Webhook: `Response Mode: Respond Immediately`.
+- Nó final: `HTTP Request POST` para o novo callback com `Retry On Fail` (3 tentativas).
+- Ramificação curta para `requestType: "connection_test"`.
+
+## 7. Testes e Auditoria
+- Logs server-side: `searchId`, `requestType`, status HTTP, duração e resultado da entrega (sem dados sensíveis).
+- Implementar um "Teste de Ponta a Ponta" opcional para validar todo o ciclo (envio + callback).
+
 
