@@ -10,7 +10,10 @@ export const Route = createFileRoute('/api/public/results')({
         const body = await request.json()
         const { searchId, status, totalLeads, leads, sheetName, sheetUrl, message } = body
 
+        console.log(`[Callback] Received results for searchId: ${searchId}, status: ${status}, leads: ${leads?.length || 0}`);
+
         if (!secret || !searchId) {
+          console.warn(`[Callback] Missing headers or searchId. Secret present: ${!!secret}, searchId: ${searchId}`);
           return new Response(JSON.stringify({ error: 'Missing headers or searchId' }), { status: 400 })
         }
 
@@ -27,6 +30,7 @@ export const Route = createFileRoute('/api/public/results')({
           .single()
 
         if (searchError || !search) {
+          console.error(`[Callback] Search record not found for searchId: ${searchId}`);
           return new Response(JSON.stringify({ error: 'Search not found' }), { status: 404 })
         }
 
@@ -38,6 +42,7 @@ export const Route = createFileRoute('/api/public/results')({
           .single()
 
         if (!settings?.callback_secret_hash || !verifySecret(secret, settings.callback_secret_hash)) {
+          console.error(`[Callback] Unauthorized secret for searchId: ${searchId}`);
           return new Response(JSON.stringify({ error: 'Unauthorized' }), { status: 401 })
         }
 
@@ -53,9 +58,11 @@ export const Route = createFileRoute('/api/public/results')({
         })
 
         if (rpcError) {
+          console.error(`[Callback] RPC Error for searchId: ${searchId}:`, rpcError);
           return new Response(JSON.stringify({ error: rpcError.message }), { status: 500 })
         }
 
+        console.log(`[Callback] Successfully processed results for searchId: ${searchId}`);
         return new Response(JSON.stringify({ success: true }), { headers: { 'Content-Type': 'application/json' } })
       }
     }

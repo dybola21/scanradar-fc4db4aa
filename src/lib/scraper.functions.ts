@@ -213,6 +213,8 @@ export const startSearch = createServerFn({ method: "POST" })
     try {
       const secret = settings.webhook_secret ? decrypt(settings.webhook_secret) : "";
       
+      console.log(`[Scraper] Starting search trigger for ${termo} in ${cidade}/${uf}. Target URL: ${settings.webhook_url}`);
+      
       // Call n8n with 15s timeout
       const response = await safeWebhookFetch(settings.webhook_url, {
         method: "POST",
@@ -230,6 +232,8 @@ export const startSearch = createServerFn({ method: "POST" })
           uf 
         }),
       });
+
+      console.log(`[Scraper] Webhook response status: ${response.status}`);
 
       let nextStatus = "delivery_unknown";
       if (response.status >= 200 && response.status < 300) {
