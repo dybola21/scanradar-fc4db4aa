@@ -10,7 +10,10 @@ export const Route = createFileRoute('/api/public/results')({
         const body = await request.json()
         const { searchId, status, totalLeads, leads, sheetName, sheetUrl, message } = body
 
+        console.log(`[Callback] Received results for searchId: ${searchId}, status: ${status}, leads: ${leads?.length || 0}`);
+
         if (!secret || !searchId) {
+          console.warn(`[Callback] Missing headers or searchId. Secret present: ${!!secret}, searchId: ${searchId}`);
           return new Response(JSON.stringify({ error: 'Missing headers or searchId' }), { status: 400 })
         }
 
