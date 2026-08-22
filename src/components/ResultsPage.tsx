@@ -53,8 +53,66 @@ export default function ResultsPage() {
   const { data, isLoading } = useQuery({
     queryKey: ["search-details", searchId],
     queryFn: () => fetchDetails({ data: { searchId } }),
-    refetchInterval: (q) => (q.state.data?.search.status === "processing" ? 4000 : false),
+    // Only poll as fallback if terminal state not reached and realtime might have failed
+    refetchInterval: (q) => {
+      const status = q.state.data?.search.status;
+      return (status && !["completed", "failed"].includes(status)) ? 10000 : false;
+    },
   });
+
+  useEffect(() => {
+    if (!searchId) return;
+
+    const channel = supabase
+      .channel(`search_updates_${searchId}`)
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'searches',
+          filter: `id=eq.${searchId}`
+        },
+        () => {
+          queryClient.invalidateQueries({ queryKey: ["search-details", searchId] });
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'leads',
+          filter: `search_id=eq.${searchId}`
+        },
+        () => {
+          queryClient.invalidateQueries({ queryKey: ["search-details", searchId] });
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [searchId, queryClient]);
+
+  const handleReconcile = async () => {
+    setIsReconciling(true);
+    try {
+      const status = await checkStatusFn({ data: { searchId } });
+      if (status?.status === 'completed' || status?.status === 'failed') {
+        queryClient.invalidateQueries({ queryKey: ["search-details", searchId] });
+        toast.success("Status atualizado.");
+      } else {
+        toast.info("A extração ainda está sendo processada pelo n8n.");
+      }
+    } catch (err) {
+      toast.error("Erro ao verificar status.");
+    } finally {
+      setIsReconciling(false);
+    }
+  };
+
 
   const search = data?.search;
   const leads = data?.leads ?? [];
@@ -181,6 +239,26 @@ export default function ResultsPage() {
 
   return (
     <div className="space-y-6">
+      {search.status === "processing" && (
+        <div className="flex items-center gap-3 rounded-xl border border-primary/20 bg-primary/5 p-4 animate-pulse">
+          <Clock className="size-5 text-primary" />
+          <div className="flex-1">
+            <p className="text-sm font-medium text-primary">Extração em andamento...</p>
+            <p className="text-xs text-primary/70">Os leads aparecerão aqui automaticamente conforme forem detectados.</p>
+          </div>
+        </div>
+      )}
+
+      {search.status === "delivery_unknown" && (
+        <div className="flex items-center gap-3 rounded-xl border border-warning/20 bg-warning/5 p-4">
+          <AlertTriangle className="size-5 text-warning" />
+          <div className="flex-1">
+            <p className="text-sm font-medium text-warning">Status de entrega desconhecido</p>
+            <p className="text-xs text-warning/70">O n8n não confirmou o recebimento da busca. Clique em "Verificar processamento" para reconciliar.</p>
+          </div>
+        </div>
+      )}
+
       <div className="flex items-center gap-3">
         <Button asChild variant="outline" size="icon" className="size-10 shrink-0 rounded-xl" aria-label="Voltar ao histórico">
           <Link to="/history">
@@ -194,6 +272,17 @@ export default function ResultsPage() {
           actions={
             <>
               <SearchStatusBadge status={search.status} />
+              {search.status === "delivery_unknown" && (
+                <Button 
+                  variant="outline" 
+                  className="min-h-11 rounded-xl border-warning/50 text-warning" 
+                  onClick={handleReconcile}
+                  disabled={isReconciling}
+                >
+                  {isReconciling ? <Loader2 className="mr-2 size-4 animate-spin" /> : <RefreshCcw className="mr-2 size-4" />}
+                  Verificar processamento
+                </Button>
+              )}
               <Button variant="outline" className="min-h-11 rounded-xl" onClick={handleExportCSV} disabled={!exportRows.length}>
                 <Download className="size-4" />
                 CSV
@@ -210,6 +299,7 @@ export default function ResultsPage() {
                   </a>
                 </Button>
               ) : null}
+
             </>
           }
         />
