@@ -82,11 +82,11 @@ export const Route = createFileRoute('/api/public/results')({
           const { error: rpcError } = await supabaseAdmin.rpc('complete_search_with_leads', {
             p_search_id: searchId,
             p_status: status || 'completed',
-            p_total_leads: totalLeads || 0,
+            p_total_leads: Number(totalLeads) || 0,
             p_leads: mappedLeads,
-            p_sheet_name: sheetName,
-            p_sheet_url: sheetUrl,
-            p_error_message: message
+            p_sheet_name: sheetName || null,
+            p_sheet_url: sheetUrl || null,
+            p_error_message: message || null
           })
 
           if (rpcError) {

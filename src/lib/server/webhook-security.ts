@@ -151,6 +151,8 @@ export async function safeWebhookFetch(url: string, options: RequestInit = {}): 
     const response = await fetch(url, {
       ...options,
       redirect: 'manual', 
+      // @ts-ignore - node-fetch specific
+      follow: 0, 
       signal: controller.signal,
     });
     
