@@ -37,10 +37,13 @@ export default function SearchPage() {
   const lastSearch = history?.[0];
 
   const searchMutation = useMutation({
-    mutationFn: (data: { termo: string; cidade: string; uf: string }) => {
-      console.log("[Search] Initiating search mutation with data:", data);
-      return startSearchFn({ data });
+    mutationFn: async (data: { termo: string; cidade: string; uf: string }) => {
+      console.log("[Search] Calling startSearch server function...");
+      const response = await startSearchFn({ data });
+      console.log("[Search] Server function response:", response);
+      return response;
     },
+
     onSuccess: (result) => {
       if (result.success) {
         console.log("[Search] Mutation success:", result);

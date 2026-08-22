@@ -148,6 +148,12 @@ export async function safeWebhookFetch(url: string, options: RequestInit = {}): 
     // blocking a valid production n8n instance if it resolves to a range 
     // the runtime considers internal.
     
+    console.log(`[Webhook Security] Fetch options:`, {
+      method: options.method,
+      headers: options.headers ? Object.keys(options.headers) : [],
+      redirect: 'manual'
+    });
+
     const response = await fetch(url, {
       ...options,
       redirect: 'manual', 
@@ -155,6 +161,7 @@ export async function safeWebhookFetch(url: string, options: RequestInit = {}): 
       follow: 0, 
       signal: controller.signal,
     });
+
     
     console.log(`[Webhook Security] Received response from ${url}: Status ${response.status}`);
     
