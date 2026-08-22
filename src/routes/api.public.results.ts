@@ -1,6 +1,7 @@
 import { createFileRoute } from '@tanstack/react-router'
 
 import { verifySecret } from '@/lib/server/encryption'
+import { serverLogScanEvent } from '@/lib/logs.server'
 
 export const Route = createFileRoute('/api/public/results')({
   server: {
