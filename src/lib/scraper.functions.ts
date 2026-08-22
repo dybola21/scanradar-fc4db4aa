@@ -114,7 +114,7 @@ export const testIntegration = createServerFn({ method: "POST" })
       return { success: false, error: "Integração não configurada" };
     }
 
-    const webhookUrl = settings.webhook_url;
+    const webhookUrl = settings.webhook_url!;
 
     try {
       const secret = settings.webhook_secret ? decrypt(settings.webhook_secret) : "";
@@ -306,7 +306,7 @@ export const startSearch = createServerFn({ method: "POST" })
       });
 
       const startTime = Date.now();
-      const webhookUrl = settings.webhook_url;
+      const webhookUrl = settings.webhook_url!;
       console.log(`[Scraper] Calling safeWebhookFetch to: ${webhookUrl}`);
 
       await serverLogScanEvent({
