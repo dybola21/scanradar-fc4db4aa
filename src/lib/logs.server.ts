@@ -34,20 +34,27 @@ export async function serverLogScanEvent(data: {
     }
   }
 
-  const { error } = await supabaseAdmin
-    .from("scan_logs" as any)
-    .insert({
-      search_id: data.searchId,
-      event_type: data.eventType,
-      event_status: data.eventStatus,
-      message: data.message,
-      payload: sanitizedPayload,
-      error_message: data.errorMessage,
-      http_status: data.httpStatus,
-      duration_ms: data.durationMs,
-    } as any);
+  const logData: any = {
+    search_id: data.searchId ?? null,
+    event_type: data.eventType,
+    event_status: data.eventStatus,
+    message: data.message ?? null,
+    payload: sanitizedPayload,
+    error_message: data.errorMessage ?? null,
+    http_status: data.httpStatus ?? null,
+    duration_ms: data.durationMs ?? null,
+  };
 
-  if (error) {
-    console.error("[Logs Server] Failed to persist log:", error);
+  try {
+    const { error } = await supabaseAdmin
+      .from("scan_logs")
+      .insert(logData);
+
+    if (error) {
+      console.error("[Logs Server] Supabase insert error:", error);
+      console.log("[Logs Server] Attempted log was:", JSON.stringify(logData));
+    }
+  } catch (err) {
+    console.error("[Logs Server] Exception during log persist:", err);
   }
 }

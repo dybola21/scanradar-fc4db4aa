@@ -71,7 +71,7 @@ function isPrivateIP(ip: string): boolean {
 export async function validateWebhookUrl(url: string): Promise<{ valid: boolean; error?: string }> {
   try {
     const parsed = new URL(url);
-    console.log(`[Webhook Security] Validating URL: ${url}`);
+    console.log(`[Webhook Security] Validating URL: ${url} (Hostname: ${parsed.hostname}, Protocol: ${parsed.protocol})`);
     
     if (parsed.protocol !== 'https:') {
       console.warn(`[Webhook Security] Blocked non-HTTPS protocol: ${parsed.protocol}`);

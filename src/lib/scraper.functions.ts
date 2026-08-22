@@ -307,26 +307,29 @@ export const startSearch = createServerFn({ method: "POST" })
 
       const startTime = Date.now();
       const webhookUrl = settings.webhook_url!;
-      console.log(`[Scraper] Calling safeWebhookFetch to: ${webhookUrl}`);
-
-      await serverLogScanEvent({
-        searchId: searchRecord.id,
-        eventType: 'N8N_REQUEST_ATTEMPT',
-        eventStatus: 'started',
-        message: 'Tentando realizar fetch para o webhook do n8n',
-        payload: { url: webhookUrl }
-      });
       
-      const response = await safeWebhookFetch(webhookUrl, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "Accept": "application/json",
-          "X-Webhook-Secret": secret,
-          "X-Idempotency-Key": searchRecord.id,
-        },
-        body: JSON.stringify(payload),
-      });
+      console.log(`[Scraper] Starting fetch to: ${webhookUrl}`);
+      
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 15000);
+
+      let response: Response;
+      try {
+        response = await fetch(webhookUrl, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Accept": "application/json",
+            "X-Webhook-Secret": secret,
+            "X-Idempotency-Key": searchRecord.id,
+          },
+          body: JSON.stringify(payload),
+          signal: controller.signal,
+          redirect: 'manual',
+        });
+      } finally {
+        clearTimeout(timeoutId);
+      }
 
       const durationMs = Date.now() - startTime;
       console.log(`[Scraper] Webhook returned status: ${response.status} in ${durationMs}ms`);
