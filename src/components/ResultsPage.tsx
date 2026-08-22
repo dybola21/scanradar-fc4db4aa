@@ -2,6 +2,7 @@ import { useMemo, useState, useEffect } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { getSearchDetails, checkSearchStatus } from "@/lib/scraper.functions";
+import { logScanEvent } from "@/lib/logs.functions";
 import { useParams, Link } from "@tanstack/react-router";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
@@ -42,6 +43,7 @@ export default function ResultsPage() {
   const queryClient = useQueryClient();
   const fetchDetails = useServerFn(getSearchDetails);
   const checkStatusFn = useServerFn(checkSearchStatus);
+  const logEventFn = useServerFn(logScanEvent);
 
   const [presenceFilter, setPresenceFilter] = useState("all");
   const [sortBy, setSortBy] = useState("opportunity");
@@ -99,15 +101,43 @@ export default function ResultsPage() {
   const handleReconcile = async () => {
     setIsReconciling(true);
     try {
+      await logEventFn({
+        data: {
+          searchId,
+          eventType: 'SYSTEM_ERROR',
+          eventStatus: 'started',
+          message: 'Usuário solicitou reconciliação manual de status'
+        }
+      });
+
       const status = await checkStatusFn({ data: { searchId } });
+      
       if (status?.status === 'completed' || status?.status === 'failed') {
         queryClient.invalidateQueries({ queryKey: ["search-details", searchId] });
         toast.success("Status atualizado.");
+        
+        await logEventFn({
+          data: {
+            searchId,
+            eventType: 'RESULTS_SAVED',
+            eventStatus: 'success',
+            message: `Status reconciliado manualmente para: ${status.status}`
+          }
+        });
       } else {
         toast.info("A extração ainda está sendo processada pelo n8n.");
       }
     } catch (err) {
       toast.error("Erro ao verificar status.");
+      await logEventFn({
+        data: {
+          searchId,
+          eventType: 'SYSTEM_ERROR',
+          eventStatus: 'failed',
+          errorMessage: String(err),
+          message: 'Erro durante reconciliação manual'
+        }
+      });
     } finally {
       setIsReconciling(false);
     }
