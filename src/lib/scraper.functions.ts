@@ -158,6 +158,7 @@ export const startSearch = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .validator(searchSchema)
   .handler(async ({ data, context }) => {
+    console.log(`[Scraper] startSearch called by user ${context.userId} with data:`, data);
     const { supabase, userId } = context;
     const termo = data.termo.trim();
     const cidade = data.cidade.trim();
