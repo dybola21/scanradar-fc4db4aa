@@ -1,5 +1,5 @@
 import { createFileRoute } from '@tanstack/react-router';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { PageHeader } from '@/components/ui-kit/PageHeader';
 import { Card } from '@/components/ui/card';
@@ -14,12 +14,16 @@ import {
   Filter,
   Activity,
   ChevronDown,
-  ChevronUp
+  ChevronUp,
+  RefreshCw,
+  Trash2
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import { Button } from '@/components/ui/button';
+import { toast } from 'sonner';
 
 export const Route = createFileRoute('/_authenticated/admin/logs')({
   component: AdminLogsPage,
