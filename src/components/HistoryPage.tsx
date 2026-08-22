@@ -164,14 +164,14 @@ export default function HistoryPage() {
         ) : (
           <div className="overflow-x-auto">
             <Table>
-              <TableHeader>
+              <TableHeader className="bg-muted/50">
                 <TableRow className="hover:bg-transparent">
-                  <TableHead className="px-5 text-xs font-medium text-muted-foreground">Nicho</TableHead>
-                  <TableHead className="px-5 text-xs font-medium text-muted-foreground">Localização</TableHead>
-                  <TableHead className="px-5 text-right text-xs font-medium text-muted-foreground">Leads</TableHead>
-                  <TableHead className="px-5 text-xs font-medium text-muted-foreground">Data</TableHead>
-                  <TableHead className="px-5 text-xs font-medium text-muted-foreground">Status</TableHead>
-                  <TableHead className="px-5 text-right text-xs font-medium text-muted-foreground">Ações</TableHead>
+                  <TableHead className="h-10 px-5 text-xs font-semibold uppercase tracking-wider text-muted-foreground">Nicho</TableHead>
+                  <TableHead className="h-10 px-5 text-xs font-semibold uppercase tracking-wider text-muted-foreground">Localização</TableHead>
+                  <TableHead className="h-10 px-5 text-right text-xs font-semibold uppercase tracking-wider text-muted-foreground">Leads</TableHead>
+                  <TableHead className="h-10 px-5 text-xs font-semibold uppercase tracking-wider text-muted-foreground">Data</TableHead>
+                  <TableHead className="h-10 px-5 text-xs font-semibold uppercase tracking-wider text-muted-foreground">Status</TableHead>
+                  <TableHead className="h-10 px-5 text-right text-xs font-semibold uppercase tracking-wider text-muted-foreground">Ações</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -256,11 +256,11 @@ export default function HistoryPage() {
       ) : null}
 
       <AlertDialog open={Boolean(pendingDelete)} onOpenChange={(open) => !open && setPendingDelete(null)}>
-        <AlertDialogContent className="rounded-2xl">
+        <AlertDialogContent className="max-w-[400px] rounded-2xl">
           <AlertDialogHeader>
-            <AlertDialogTitle>Excluir esta busca?</AlertDialogTitle>
-            <AlertDialogDescription>
-              A busca “{pendingDelete?.termo}” e todos os leads associados serão removidos permanentemente.
+            <AlertDialogTitle className="text-xl">Excluir esta busca?</AlertDialogTitle>
+            <AlertDialogDescription className="text-[15px]">
+              A busca “{pendingDelete?.termo}” e todos os leads associados serão removidos permanentemente. Esta ação não pode ser desfeita.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

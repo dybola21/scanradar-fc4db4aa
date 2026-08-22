@@ -9,11 +9,21 @@ import {
   PanelLeftClose,
   PanelLeftOpen,
   Plus,
+  User,
+  ChevronUp,
 } from "lucide-react";
 import { ScanRadarLogo } from "./ScanRadarLogo";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { supabase } from "@/integrations/supabase/client";
 import { getIntegrationStatus } from "@/lib/scraper.functions";
 import { useServerFn } from "@tanstack/react-start";
@@ -113,59 +123,58 @@ export default function DashboardLayout() {
           })}
         </nav>
 
-        <div className="mt-auto space-y-3 px-3">
-          <Link
-            to="/settings"
-            onClick={() => mobile && setIsMobileMenuOpen(false)}
-            className={cn(
-              "flex min-h-11 items-center gap-2.5 rounded-xl border border-border bg-secondary/60 px-3 text-left transition-colors hover:bg-secondary",
-              compact && "justify-center px-0",
-            )}
-            aria-label={connectionState.label}
-            title={connectionState.label}
-          >
-            <span className={cn("size-2 shrink-0 rounded-full", connectionState.tone)} aria-hidden />
-            {!compact && (
-              <span className="min-w-0">
-                <span className="block truncate text-xs font-medium text-foreground">n8n</span>
-                <span className="block truncate text-[11px] text-muted-foreground">
-                  {connectionState.label}
-                </span>
-              </span>
-            )}
-          </Link>
-
-          <div
-            className={cn(
-              "flex items-center gap-2.5 rounded-xl border border-border px-3 py-2.5",
-              compact && "justify-center px-0",
-            )}
-          >
-            <span className="grid size-8 shrink-0 place-items-center rounded-lg bg-primary text-xs font-semibold text-primary-foreground">
-              {(email ?? "?").charAt(0).toUpperCase()}
-            </span>
-            {!compact && (
-              <span className="min-w-0">
-                <span className="block truncate text-xs font-medium text-foreground">
-                  {email ?? "Carregando…"}
-                </span>
-                <span className="block text-[11px] text-muted-foreground">Conta ativa</span>
-              </span>
-            )}
-          </div>
-
-          <Button
-            variant="ghost"
-            onClick={handleLogout}
-            aria-label="Sair da conta"
-            className={cn(
-              "min-h-11 w-full justify-start gap-2.5 rounded-xl px-3 text-sm font-medium text-muted-foreground hover:bg-destructive-soft hover:text-destructive",
-              compact && "justify-center px-0",
-            )}
-          >
-            <LogOut className="size-[18px] shrink-0" />
-            {!compact && <span>Sair</span>}
-          </Button>
+        <div className="mt-auto px-3 pb-2">
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <button
+                className={cn(
+                  "flex w-full items-center gap-2.5 rounded-xl border border-border p-2 transition-colors hover:bg-secondary/80",
+                  compact && "justify-center px-0",
+                )}
+                aria-label="Menu da conta"
+              >
+                <div className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-primary text-[13px] font-bold text-primary-foreground shadow-sm">
+                  {(email ?? "?").charAt(0).toUpperCase()}
+                </div>
+                {!compact && (
+                  <>
+                    <div className="min-w-0 flex-1 text-left">
+                      <p className="truncate text-[13px] font-semibold text-foreground">
+                        {email?.split("@")[0] || "Usuário"}
+                      </p>
+                      <p className="truncate text-[11px] text-muted-foreground">
+                        {connectionState.label}
+                      </p>
+                    </div>
+                    <ChevronUp className="size-4 shrink-0 text-muted-foreground/60" />
+                  </>
+                )}
+              </button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent side={mobile ? "bottom" : "right"} align={mobile ? "center" : "end"} className="w-56 rounded-xl shadow-md">
+              <DropdownMenuLabel className="font-normal">
+                <div className="flex flex-col space-y-1">
+                  <p className="text-sm font-medium leading-none">Minha Conta</p>
+                  <p className="text-xs leading-none text-muted-foreground">{email}</p>
+                </div>
+              </DropdownMenuLabel>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem asChild className="cursor-pointer rounded-lg">
+                <Link to="/settings" className="flex w-full items-center gap-2">
+                  <Settings className="size-4" />
+                  <span>Configurações</span>
+                </Link>
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem 
+                onClick={handleLogout} 
+                className="cursor-pointer rounded-lg text-destructive focus:bg-destructive-soft focus:text-destructive"
+              >
+                <LogOut className="size-4" />
+                <span>Sair</span>
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
       </div>
     );
@@ -177,7 +186,7 @@ export default function DashboardLayout() {
         <aside
           className={cn(
             "fixed z-40 hidden h-dvh flex-col border-r border-border bg-sidebar transition-[width] duration-200 md:flex",
-            isCollapsed ? "w-[72px]" : "w-[280px]",
+            isCollapsed ? "w-[72px]" : "w-[240px]",
           )}
         >
           <div
@@ -226,7 +235,7 @@ export default function DashboardLayout() {
         </aside>
 
         <div
-          className={cn("hidden shrink-0 transition-[width] duration-200 md:block", isCollapsed ? "w-[72px]" : "w-[280px]")}
+          className={cn("hidden shrink-0 transition-[width] duration-200 md:block", isCollapsed ? "w-[72px]" : "w-[240px]")}
         />
 
         <div className="flex min-w-0 flex-1 flex-col">
@@ -250,7 +259,7 @@ export default function DashboardLayout() {
                     <Menu className="size-5" />
                   </Button>
                 </SheetTrigger>
-                <SheetContent side="left" className="w-[280px] p-0">
+                <SheetContent side="left" className="w-[240px] p-0">
                   <div className="flex h-16 items-center gap-2.5 border-b border-border px-4">
                     <ScanRadarLogo size={28} theme="light" />
                   </div>
@@ -261,7 +270,7 @@ export default function DashboardLayout() {
           </header>
 
           <main className="flex-1">
-            <div className="mx-auto w-full max-w-[1400px] px-4 py-6 md:px-8 md:py-8">
+            <div className="mx-auto w-full max-w-[1320px] px-4 py-6 md:px-8 md:py-8">
               <AnimatePresence mode="wait">
                 <motion.div
                   key={location.pathname}

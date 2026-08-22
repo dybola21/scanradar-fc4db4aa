@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
-import { Loader2, Activity, Copy, Check, ShieldCheck } from "lucide-react";
+import { Loader2, Activity, Copy, Check, ShieldCheck, Info } from "lucide-react";
 import { PageHeader } from "@/components/ui-kit/PageHeader";
 import { cn } from "@/lib/utils";
 
@@ -24,7 +24,6 @@ export default function Settings() {
 
   const [webhookUrl, setWebhookUrl] = useState("");
   const [webhookSecret, setWebhookSecret] = useState("");
-  const [integrationName, setIntegrationName] = useState("");
   const [isTesting, setIsTesting] = useState(false);
   const [copied, setCopied] = useState(false);
 
@@ -32,7 +31,6 @@ export default function Settings() {
     if (settings) {
       setWebhookUrl(settings.webhook_url);
       setWebhookSecret("");
-      setIntegrationName(settings.integration_name);
     }
   }, [settings]);
 
@@ -52,7 +50,7 @@ export default function Settings() {
     updateMutation.mutate({
       webhook_url: webhookUrl.trim(),
       webhook_secret: webhookSecret || null,
-      integration_name: integrationName.trim() || "n8n integration",
+      integration_name: settings?.integration_name || "n8n integration",
     });
   };
 
@@ -84,83 +82,73 @@ export default function Settings() {
 
   if (isLoading) {
     return (
-      <div className="mx-auto max-w-4xl space-y-6">
+      <div className="mx-auto max-w-3xl space-y-6">
         <Skeleton className="h-10 w-64 rounded-xl" />
-        <Skeleton className="h-80 rounded-2xl" />
+        <Skeleton className="h-[400px] rounded-2xl" />
       </div>
     );
   }
 
   const connected = Boolean(settings?.is_connected);
   const configured = Boolean(settings?.webhook_url);
+  const hasChanges = webhookUrl !== (settings?.webhook_url || "") || webhookSecret.length > 0;
 
   return (
-    <div className="mx-auto max-w-4xl space-y-6">
+    <div className="mx-auto max-w-3xl space-y-6">
       <PageHeader
-        eyebrow="Configurações"
-        title="Integração n8n"
-        description="Conecte o webhook responsável por executar as extrações de leads."
+        title="Configurações de Integração"
+        description="Conecte sua instância do n8n para realizar as buscas de leads."
       />
 
       <div
         className={cn(
-          "grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-3 rounded-2xl border p-4",
+          "grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-4 rounded-2xl border p-5 shadow-sm transition-colors",
           !configured
             ? "border-border bg-card"
             : connected
-              ? "border-success/30 bg-success-soft"
-              : "border-warning/30 bg-warning-soft",
+              ? "border-success/20 bg-success-soft/30"
+              : "border-warning/20 bg-warning-soft/30",
         )}
       >
-        <span
+        <div
           className={cn(
-            "grid size-10 shrink-0 place-items-center rounded-xl",
-            !configured ? "bg-secondary text-muted-foreground" : connected ? "bg-success/15 text-success" : "bg-warning/15 text-warning",
+            "grid size-12 shrink-0 place-items-center rounded-xl",
+            !configured 
+              ? "bg-secondary text-muted-foreground" 
+              : connected 
+                ? "bg-success/10 text-success" 
+                : "bg-warning/10 text-warning",
           )}
         >
-          <Activity className="size-5" />
-        </span>
+          <Activity className="size-6" />
+        </div>
         <div className="min-w-0">
-          <p className="truncate text-sm font-medium text-foreground">
-            {!configured ? "Nenhum webhook configurado" : connected ? "Integração conectada" : "Integração aguardando teste"}
+          <p className="text-[15px] font-semibold text-foreground">
+            {!configured ? "Webhook não configurado" : connected ? "Integração conectada" : "Aguardando teste de conexão"}
           </p>
           <p className="truncate text-xs text-muted-foreground">
             {!configured
-              ? "Preencha a URL do webhook para habilitar as buscas."
+              ? "Preencha os campos abaixo para habilitar o sistema."
               : connected
-                ? `${settings?.integration_name} está pronta para processar extrações.`
-                : "Salve as configurações e execute o teste de conexão."}
+                ? "A engine está pronta para processar novas buscas."
+                : "A URL foi salva, mas ainda não validamos a conexão."}
           </p>
         </div>
         <Button
           variant="outline"
-          className="min-h-11 shrink-0 rounded-xl"
+          className="h-11 shrink-0 rounded-xl px-4"
           onClick={handleTest}
-          disabled={isTesting || !webhookUrl}
+          disabled={isTesting || !configured}
         >
-          {isTesting ? <Loader2 className="size-4 animate-spin" /> : <Activity className="size-4" />}
+          {isTesting ? <Loader2 className="mr-2 size-4 animate-spin" /> : <Activity className="mr-2 size-4" />}
           Testar
         </Button>
       </div>
 
-      <form onSubmit={handleSave} className="space-y-5 rounded-2xl border border-border bg-card p-5 md:p-6">
-        <div className="space-y-2">
-          <Label htmlFor="integration-name" className="text-sm font-medium">
-            Nome da integração
-          </Label>
-          <Input
-            id="integration-name"
-            value={integrationName}
-            onChange={(e) => setIntegrationName(e.target.value)}
-            placeholder="Ex.: ScanRadar produção"
-            className="h-11 rounded-xl"
-            required
-          />
-        </div>
-
-        <div className="space-y-2">
-          <Label htmlFor="webhook-url" className="text-sm font-medium">
-            URL do webhook
+      <form onSubmit={handleSave} className="space-y-6 rounded-2xl border border-border bg-card p-6 shadow-sm md:p-8">
+        <div className="space-y-2.5">
+          <Label htmlFor="webhook-url" className="text-sm font-semibold text-foreground">
+            URL do Webhook (POST)
           </Label>
           <div className="flex gap-2">
             <Input
@@ -169,7 +157,7 @@ export default function Settings() {
               value={webhookUrl}
               onChange={(e) => setWebhookUrl(e.target.value)}
               placeholder="https://n8n.seudominio.com/webhook/scanradar"
-              className="h-11 min-w-0 flex-1 rounded-xl"
+              className="h-12 min-w-0 flex-1 rounded-xl"
               required
             />
             <Button
@@ -177,44 +165,51 @@ export default function Settings() {
               variant="outline"
               size="icon"
               onClick={copyUrl}
-              className="size-11 shrink-0 rounded-xl"
-              aria-label="Copiar URL do webhook"
+              className="size-12 shrink-0 rounded-xl"
+              aria-label="Copiar URL"
               disabled={!webhookUrl}
             >
               {copied ? <Check className="size-4" /> : <Copy className="size-4" />}
             </Button>
           </div>
-          <p className="text-xs text-muted-foreground">
-            Endpoint POST do nó Webhook no seu fluxo n8n.
+          <p className="text-[12px] text-muted-foreground">
+            Esta URL será chamada via POST sempre que uma nova busca for iniciada.
           </p>
         </div>
 
-        <div className="space-y-2">
-          <Label htmlFor="webhook-secret" className="text-sm font-medium">
-            Chave de segurança
+        <div className="space-y-2.5">
+          <Label htmlFor="webhook-secret" className="text-sm font-semibold text-foreground">
+            Chave de Segurança (X-Webhook-Secret)
           </Label>
           <Input
             id="webhook-secret"
             type="password"
             value={webhookSecret}
             onChange={(e) => setWebhookSecret(e.target.value)}
-            placeholder={settings?.has_secret ? "Chave salva — preencha para substituir" : "Token enviado em X-Webhook-Secret"}
-            className="h-11 rounded-xl"
+            placeholder={settings?.has_secret ? "•••••••••••••••• (Preencha para alterar)" : "Digite a chave de segurança"}
+            className="h-12 rounded-xl"
           />
-          <p className="text-xs text-muted-foreground">
-            Enviada no cabeçalho <code>X-Webhook-Secret</code> para validar a origem da requisição.
-          </p>
+          <div className="flex items-start gap-2 rounded-lg bg-secondary/50 p-3 text-[12px] text-muted-foreground">
+            <Info className="mt-0.5 size-3.5 shrink-0" />
+            <span>Recomendamos o uso de uma chave complexa para evitar execuções não autorizadas no seu n8n.</span>
+          </div>
         </div>
 
-        <div className="flex flex-col gap-3 border-t border-border pt-5 sm:flex-row sm:items-center sm:justify-between">
-          <p className="flex items-center gap-2 text-xs text-muted-foreground">
-            <ShieldCheck className="size-3.5 shrink-0" />
-            A chave fica armazenada apenas no backend, nunca no navegador.
-          </p>
-          <Button type="submit" className="min-h-11 rounded-xl px-6" disabled={updateMutation.isPending}>
-            {updateMutation.isPending ? <Loader2 className="size-4 animate-spin" /> : null}
-            Salvar configurações
-          </Button>
+        <div className="flex flex-col gap-4 border-t border-border pt-6 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex items-center gap-2 text-xs text-muted-foreground">
+            <ShieldCheck className="size-4 text-success" />
+            Criptografia AES-256 no armazenamento.
+          </div>
+          <div className="flex gap-3">
+            <Button
+              type="submit"
+              className="h-11 rounded-xl px-8 font-semibold shadow-sm"
+              disabled={updateMutation.isPending || !webhookUrl || !hasChanges}
+            >
+              {updateMutation.isPending ? <Loader2 className="mr-2 size-4 animate-spin" /> : null}
+              Salvar Configurações
+            </Button>
+          </div>
         </div>
       </form>
     </div>
