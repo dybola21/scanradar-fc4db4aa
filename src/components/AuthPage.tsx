@@ -88,8 +88,8 @@ export default function AuthPage() {
         </div>
         
         <div className="relative z-10 flex w-full max-w-[580px] flex-col items-center text-center">
-          <div className="mb-6">
-            <AnimatedRadarScene size={420} />
+          <div className="mb-0">
+            <AnimatedRadarScene size={480} />
           </div>
           
           <div className="space-y-6">
