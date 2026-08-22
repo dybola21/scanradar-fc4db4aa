@@ -7,7 +7,7 @@ import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { Chrome, ArrowRight, Eye, EyeOff, CheckCircle2 } from "lucide-react";
 import { lovable } from "@/integrations/lovable/index";
-import { AnimatedRadarLogo } from "./AnimatedRadarLogo";
+import { ScanRadarLogo } from "./ScanRadarLogo";
 import { AnimatedRadarScene } from "./AnimatedRadarScene";
 
 /**
@@ -89,11 +89,8 @@ export default function AuthPage() {
 
         <div className="relative z-10 mx-auto flex h-full w-full max-w-[600px] flex-col">
           {/* Logo at the top left of the container */}
-          <div className="mb-8 flex items-center gap-3 lg:mb-12">
-            <div className="grid h-9 w-9 place-items-center rounded-xl bg-[#0369A1]">
-              <AnimatedRadarLogo size={24} />
-            </div>
-            <span className="text-[24px] font-semibold tracking-tight text-[#F6F8FB]">ScanRadar</span>
+          <div className="mb-8 flex items-center lg:mb-12">
+            <ScanRadarLogo size={36} theme="dark" />
           </div>
 
           <div className="flex flex-1 flex-col items-center justify-center py-2 lg:py-4">
@@ -130,11 +127,8 @@ export default function AuthPage() {
       <div className="flex w-full flex-col items-center justify-center bg-[#F5F7FA] p-6 lg:w-[45%] lg:p-12">
         {/* Mobile Logo and Hero (Only visible on small screens) */}
         <div className="mb-8 flex flex-col items-center lg:hidden">
-          <div className="mb-8 flex items-center gap-3">
-            <div className="grid h-9 w-9 place-items-center rounded-xl bg-[#0369A1]">
-              <AnimatedRadarLogo size={24} />
-            </div>
-            <span className="text-2xl font-semibold tracking-tight text-[#0B1220]">ScanRadar</span>
+          <div className="mb-8 flex items-center">
+            <ScanRadarLogo size={32} theme="light" />
           </div>
           
           <div className="mb-6 flex justify-center">

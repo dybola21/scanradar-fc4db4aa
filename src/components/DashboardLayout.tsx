@@ -10,7 +10,7 @@ import {
   PanelLeftOpen,
   Plus,
 } from "lucide-react";
-import { AnimatedRadarLogo } from "./AnimatedRadarLogo";
+import { ScanRadarLogo } from "./ScanRadarLogo";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
@@ -191,12 +191,11 @@ export default function DashboardLayout() {
               className="flex min-h-11 min-w-0 items-center gap-2.5 rounded-lg px-1"
               aria-label="ScanRadar — ir para o dashboard"
             >
-              <AnimatedRadarLogo size={30} />
-              {!isCollapsed && (
-                <span className="truncate text-[17px] font-semibold tracking-tight text-foreground">
-                  ScanRadar
-                </span>
-              )}
+              <ScanRadarLogo 
+                size={isCollapsed ? 32 : 30} 
+                theme="light" 
+                showWordmark={!isCollapsed} 
+              />
             </Link>
             {!isCollapsed && (
               <Button
@@ -237,8 +236,7 @@ export default function DashboardLayout() {
               className="flex min-h-11 min-w-0 items-center gap-2.5"
               aria-label="ScanRadar — ir para o dashboard"
             >
-              <AnimatedRadarLogo size={28} />
-              <span className="truncate text-[17px] font-semibold tracking-tight">ScanRadar</span>
+              <ScanRadarLogo size={28} theme="light" />
             </Link>
             <div className="flex shrink-0 items-center gap-2">
               <Button asChild size="icon" className="min-h-11 min-w-11 rounded-xl" aria-label="Nova busca">
@@ -254,8 +252,7 @@ export default function DashboardLayout() {
                 </SheetTrigger>
                 <SheetContent side="left" className="w-[280px] p-0">
                   <div className="flex h-16 items-center gap-2.5 border-b border-border px-4">
-                    <AnimatedRadarLogo size={28} />
-                    <SheetTitle className="text-[17px] font-semibold tracking-tight">ScanRadar</SheetTitle>
+                    <ScanRadarLogo size={28} theme="light" />
                   </div>
                   <NavContent mobile />
                 </SheetContent>
