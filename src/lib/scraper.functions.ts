@@ -217,6 +217,24 @@ export const startSearch = createServerFn({ method: "POST" })
       
       console.log(`[Scraper] Starting search trigger for ${termo} in ${cidade}/${uf}. Target URL: ${settings.webhook_url}`);
       
+      const payload = { 
+        requestType: "search",
+        searchId: searchRecord.id,
+        termo, 
+        cidade, 
+        uf 
+      };
+
+      await serverLogScanEvent({
+        searchId: searchRecord.id,
+        eventType: 'N8N_REQUEST_SENT',
+        eventStatus: 'started',
+        message: `Disparando webhook n8n para ${termo} em ${cidade}/${uf}`,
+        payload: { url: settings.webhook_url, payload }
+      });
+
+      const startTime = Date.now();
+      
       // Call n8n with 15s timeout
       const response = await safeWebhookFetch(settings.webhook_url, {
         method: "POST",
@@ -226,23 +244,33 @@ export const startSearch = createServerFn({ method: "POST" })
           "X-Webhook-Secret": secret,
           "X-Idempotency-Key": searchRecord.id,
         },
-        body: JSON.stringify({ 
-          requestType: "search",
-          searchId: searchRecord.id,
-          termo, 
-          cidade, 
-          uf 
-        }),
+        body: JSON.stringify(payload),
       });
 
+      const durationMs = Date.now() - startTime;
       console.log(`[Scraper] Webhook response status: ${response.status}`);
 
       let nextStatus = "delivery_unknown";
+      let eventStatus: 'success' | 'failed' | 'warning' = 'success';
+
       if (response.status >= 200 && response.status < 300) {
         nextStatus = "processing";
+        eventStatus = 'success';
       } else if (response.status === 401 || response.status === 403 || (response.status >= 400 && response.status < 500)) {
         nextStatus = "failed";
+        eventStatus = 'failed';
+      } else {
+        eventStatus = 'warning';
       }
+
+      await serverLogScanEvent({
+        searchId: searchRecord.id,
+        eventType: 'N8N_RESPONSE_RECEIVED',
+        eventStatus: eventStatus,
+        httpStatus: response.status,
+        durationMs,
+        message: `n8n respondeu com status ${response.status}`
+      });
 
       await supabase
         .from("searches")
@@ -257,10 +285,17 @@ export const startSearch = createServerFn({ method: "POST" })
       };
     } catch (err: any) {
       console.error("Webhook trigger error:", err);
-      // AbortError or timeout = delivery_unknown
       const isTimeout = err.name === 'AbortError' || err.message?.includes('timeout');
       const finalStatus = isTimeout ? "delivery_unknown" : "failed";
       
+      await serverLogScanEvent({
+        searchId: searchRecord.id,
+        eventType: isTimeout ? 'N8N_TIMEOUT' : 'N8N_ERROR',
+        eventStatus: 'failed',
+        errorMessage: String(err),
+        message: isTimeout ? 'Tempo limite esgotado ao chamar n8n' : 'Erro ao chamar webhook n8n'
+      });
+
       await supabase
         .from("searches")
         .update({ 
