@@ -12,14 +12,16 @@ function getEncryptionKey() {
 }
 
 export function encrypt(text: string): string {
+  if (!text) return '';
   const key = getEncryptionKey();
   const iv = randomBytes(16);
   const cipher = createCipheriv(ALGORITHM, key, iv);
-  const encrypted = Buffer.concat([cipher.update(text), cipher.final()]);
+  const encrypted = Buffer.concat([cipher.update(text, 'utf8'), cipher.final()]);
   return `${iv.toString('hex')}:${encrypted.toString('hex')}`;
 }
 
 export function decrypt(hash: string): string {
+  if (!hash) return '';
   const key = getEncryptionKey();
   const [ivHex, encryptedHex] = hash.split(':');
   if (!ivHex || !encryptedHex) {
@@ -29,5 +31,5 @@ export function decrypt(hash: string): string {
   const encrypted = Buffer.from(encryptedHex, 'hex');
   const decipher = createDecipheriv(ALGORITHM, key, iv);
   const decrypted = Buffer.concat([decipher.update(encrypted), decipher.final()]);
-  return decrypted.toString();
+  return decrypted.toString('utf8');
 }
