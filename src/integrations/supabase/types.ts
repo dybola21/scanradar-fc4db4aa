@@ -70,8 +70,6 @@ export type Database = {
           id: string
           integration_name: string | null
           is_connected: boolean | null
-          last_test_error: string | null
-          last_tested_at: string | null
           updated_at: string
           user_id: string
           webhook_secret: string | null
@@ -82,8 +80,6 @@ export type Database = {
           id?: string
           integration_name?: string | null
           is_connected?: boolean | null
-          last_test_error?: string | null
-          last_tested_at?: string | null
           updated_at?: string
           user_id: string
           webhook_secret?: string | null
@@ -94,8 +90,6 @@ export type Database = {
           id?: string
           integration_name?: string | null
           is_connected?: boolean | null
-          last_test_error?: string | null
-          last_tested_at?: string | null
           updated_at?: string
           user_id?: string
           webhook_secret?: string | null
