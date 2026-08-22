@@ -125,14 +125,22 @@ function AdminLogsPage() {
 
   const getEventBadge = (type: string) => {
     const labels: Record<string, string> = {
-      SEARCH_CREATED: 'Criação',
-      N8N_REQUEST_SENT: 'Envio n8n',
+      SEARCH_CREATED: 'Busca Criada',
+      FLOW_STARTED: 'Início Fluxo',
+      START_SEARCH_ENTERED: 'Entrada Backend',
+      AUTH_SUCCESS: 'Auth OK',
+      AUTH_ERROR: 'Erro Auth',
+      SEARCH_INSERT_SUCCESS: 'Insert OK',
+      SEARCH_INSERT_ERROR: 'Erro Insert',
+      N8N_REQUEST_ATTEMPT: 'Tentativa n8n',
+      N8N_REQUEST_SENT: 'Enviado n8n',
       N8N_RESPONSE_RECEIVED: 'Retorno n8n',
       N8N_TIMEOUT: 'Timeout',
       N8N_ERROR: 'Erro n8n',
       CALLBACK_RECEIVED: 'Callback',
       CALLBACK_VALIDATED: 'Auth Callback',
       RESULTS_SAVED: 'Persistência',
+      FRONTEND_ERROR: 'Erro Frontend',
       SYSTEM_ERROR: 'Erro Sistema'
     };
     return <Badge variant="outline" className="font-mono text-[10px] uppercase">{labels[type] || type}</Badge>;

@@ -3,6 +3,13 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { z } from "zod";
 
 const eventTypeSchema = z.enum([
+  'FLOW_STARTED',
+  'START_SEARCH_ENTERED',
+  'AUTH_SUCCESS',
+  'AUTH_ERROR',
+  'SEARCH_INSERT_SUCCESS',
+  'SEARCH_INSERT_ERROR',
+  'N8N_REQUEST_ATTEMPT',
   'SEARCH_CREATED', 
   'N8N_REQUEST_SENT', 
   'N8N_RESPONSE_RECEIVED', 
@@ -21,7 +28,7 @@ const eventStatusSchema = z.enum(['started', 'success', 'failed', 'warning']);
 export const logScanEvent = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .validator(z.object({
-    searchId: z.string().uuid(),
+    searchId: z.string().uuid().optional(),
     eventType: eventTypeSchema,
     eventStatus: eventStatusSchema,
     message: z.string().optional(),

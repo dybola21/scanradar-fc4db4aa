@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { startSearch, getSearchHistory, getIntegrationStatus } from "@/lib/scraper.functions";
+import { logScanEvent } from "@/lib/logs.functions";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { useNavigate, Link } from "@tanstack/react-router";
 import { Button } from "@/components/ui/button";
@@ -23,6 +24,7 @@ const ESTADOS = [
 export default function SearchPage() {
   const navigate = useNavigate();
   const startSearchFn = useServerFn(startSearch);
+  const logEventFn = useServerFn(logScanEvent);
   const fetchHistory = useServerFn(getSearchHistory);
   const fetchStatus = useServerFn(getIntegrationStatus);
 
@@ -63,6 +65,17 @@ export default function SearchPage() {
     onError: (error: Error) => {
       console.error("[Search] Mutation critical error:", error);
       toast.error(error.message);
+      
+      // Log critical failure to scan_logs
+      logEventFn({
+        data: {
+          eventType: 'FRONTEND_ERROR',
+          eventStatus: 'failed',
+          message: 'Falha crítica no useMutation do SearchPage',
+          errorMessage: error.message,
+          payload: { errorName: error.name, stack: error.stack }
+        }
+      }).catch(e => console.error("[Search] Failed to log frontend error:", e));
     },
   });
 
@@ -84,10 +97,24 @@ export default function SearchPage() {
     return true;
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (isPending) return;
     if (!validate()) return;
+    
+    console.log("[Search] FLOW_STARTED");
+    try {
+      await logEventFn({
+        data: {
+          eventType: 'FLOW_STARTED',
+          eventStatus: 'started',
+          message: 'Usuário clicou em Iniciar busca',
+          payload: { termo: termo.trim(), cidade: cidade.trim(), uf: uf.toUpperCase() }
+        }
+      });
+    } catch (err) {
+      console.error("[Search] Failed to log FLOW_STARTED:", err);
+    }
     
     searchMutation.mutate({ 
       termo: termo.trim(), 

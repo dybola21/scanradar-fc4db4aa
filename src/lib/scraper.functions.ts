@@ -159,8 +159,24 @@ export const startSearch = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .validator(searchSchema)
   .handler(async ({ data, context }) => {
-    const { supabase, userId } = context;
-    console.log(`[Scraper] startSearch BEGIN - User: ${userId}`, data);
+    try {
+      const { supabase, userId } = context;
+      
+      await serverLogScanEvent({
+        eventType: 'START_SEARCH_ENTERED',
+        eventStatus: 'started',
+        message: 'Função startSearch iniciada no servidor',
+        payload: { ...data, userId }
+      });
+
+      await serverLogScanEvent({
+        eventType: 'AUTH_SUCCESS',
+        eventStatus: 'success',
+        message: 'Autenticação validada com sucesso',
+        payload: { userId }
+      });
+
+      console.log(`[Scraper] startSearch BEGIN - User: ${userId}`, data);
 
     const termo = data.termo.trim();
     const cidade = data.cidade.trim();
@@ -214,9 +230,24 @@ export const startSearch = createServerFn({ method: "POST" })
       .single();
 
     if (searchError) {
+      await serverLogScanEvent({
+        eventType: 'SEARCH_INSERT_ERROR',
+        eventStatus: 'failed',
+        errorMessage: String(searchError.message || searchError),
+        message: 'Erro ao inserir busca no banco de dados',
+        payload: { error: searchError }
+      });
       console.error("[Scraper] Database insert error:", searchError);
       throw searchError;
     }
+
+    await serverLogScanEvent({
+      searchId: searchRecord.id,
+      eventType: 'SEARCH_INSERT_SUCCESS',
+      eventStatus: 'success',
+      message: 'Busca inserida no banco de dados',
+      payload: { searchId: searchRecord.id }
+    });
 
     await serverLogScanEvent({
       searchId: searchRecord.id,
@@ -262,6 +293,13 @@ export const startSearch = createServerFn({ method: "POST" })
       const startTime = Date.now();
       console.log(`[Scraper] Calling safeWebhookFetch to: ${settings.webhook_url}`);
 
+      await serverLogScanEvent({
+        searchId: searchRecord.id,
+        eventType: 'N8N_REQUEST_ATTEMPT',
+        eventStatus: 'started',
+        message: 'Tentando realizar fetch para o webhook do n8n',
+        payload: { url: settings.webhook_url }
+      });
       
       const response = await safeWebhookFetch(settings.webhook_url, {
         method: "POST",
@@ -346,7 +384,21 @@ export const startSearch = createServerFn({ method: "POST" })
         error: finalStatus === "failed" ? String(err) : undefined
       };
     }
-  });
+  } catch (globalError: any) {
+    console.error("[Scraper] startSearch GLOBAL ERROR:", globalError);
+    
+    // Log unexpected top-level failure
+    await serverLogScanEvent({
+      eventType: 'SYSTEM_ERROR',
+      eventStatus: 'failed',
+      errorMessage: String(globalError.message || globalError),
+      message: 'Erro inesperado na função startSearch',
+      payload: { errorName: globalError.name, stack: globalError.stack }
+    });
+    
+    throw globalError;
+  }
+});
 
 export const checkSearchStatus = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
