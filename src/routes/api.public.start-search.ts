@@ -59,14 +59,34 @@ export const Route = createFileRoute('/api/public/start-search')({
             payload: { termo, cidade, uf }
           });
 
-          // Step 3: Configuration - Exclusively from process.env
-          const n8nWebhookUrl = process.env['N8N_WEBHOOK_URL'];
-          const n8nWebhookSecret = process.env['N8N_WEBHOOK_SECRET'];
+          // Step 3: Configuration - env first, fallback to the user's saved integration
+          let n8nWebhookUrl = process.env['N8N_WEBHOOK_URL'] || '';
+          let n8nWebhookSecret = process.env['N8N_WEBHOOK_SECRET'] || '';
 
-          if (!n8nWebhookUrl || !n8nWebhookSecret) {
-            const errorMsg = 'Configuração do n8n ausente no ambiente (URL ou Secret)';
+          if (!n8nWebhookUrl) {
+            const { data: settings } = await supabaseAdmin
+              .from('n8n_settings')
+              .select('webhook_url, webhook_secret')
+              .eq('user_id', searchRecord.user_id)
+              .maybeSingle();
+
+            if (settings?.webhook_url) {
+              const { decrypt } = await import('@/lib/server/encryption');
+              n8nWebhookUrl = settings.webhook_url;
+              if (settings.webhook_secret) {
+                try {
+                  n8nWebhookSecret = decrypt(settings.webhook_secret);
+                } catch {
+                  n8nWebhookSecret = '';
+                }
+              }
+            }
+          }
+
+          if (!n8nWebhookUrl) {
+            const errorMsg = 'Configuração do n8n ausente (URL do webhook não encontrada)';
             console.error(`[StartSearch] ${errorMsg}`);
-            
+
             await serverLogScanEvent({
               searchId,
               eventType: 'SYSTEM_ERROR',
@@ -75,8 +95,9 @@ export const Route = createFileRoute('/api/public/start-search')({
               message: 'Falha na configuração do ambiente n8n'
             });
 
-            return jsonResponse({ success: false, error: errorMsg }, 500);
+            return jsonResponse({ success: false, error: errorMsg }, 400);
           }
+
 
           // Step 4: Log N8N_REQUEST_SENT
           // Scrub URL for logs
@@ -109,9 +130,10 @@ export const Route = createFileRoute('/api/public/start-search')({
               method: 'POST',
               headers: {
                 'Content-Type': 'application/json',
-                'X-Webhook-Secret': n8nWebhookSecret,
+                ...(n8nWebhookSecret ? { 'X-Webhook-Secret': n8nWebhookSecret } : {}),
                 'X-Idempotency-Key': searchId,
               },
+
               body: JSON.stringify(n8nPayload),
               redirect: 'manual',
             });
