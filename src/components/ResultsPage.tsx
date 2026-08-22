@@ -1,7 +1,8 @@
 import { useMemo, useState, useEffect } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { getSearchDetails, checkSearchStatus, logScanEvent } from "@/lib/scraper.functions";
+import { getSearchDetails, checkSearchStatus } from "@/lib/scraper.functions";
+import { logScanEvent } from "@/lib/logs.functions";
 import { useParams, Link } from "@tanstack/react-router";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
