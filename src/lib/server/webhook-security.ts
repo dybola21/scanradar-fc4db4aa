@@ -123,14 +123,19 @@ export async function safeWebhookFetch(url: string, options: RequestInit = {}): 
   // TanStack Start / Node environment
   // We disable redirects and set a strict timeout
   const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), 15000); // 15s timeout
+  const timeout = setTimeout(() => {
+    console.log(`[Webhook Security] Aborting request to ${url} due to 15s timeout`);
+    controller.abort();
+  }, 15000); // 15s timeout
 
   try {
+    console.log(`[Webhook Security] Initiating safe fetch to: ${url}`);
     const response = await fetch(url, {
       ...options,
       redirect: 'manual', // Use 'manual' instead of 'error' for edge compatibility; check status below
       signal: controller.signal,
     });
+    console.log(`[Webhook Security] Received response from ${url}: Status ${response.status}`);
     
     // Strict redirect blocking for SSRF protection
     if (response.status >= 300 && response.status < 400) {
