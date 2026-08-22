@@ -61,7 +61,7 @@ function AdminLogsPage() {
 
       const { data, error } = await query;
       if (error) throw error;
-      return data as ScanLog[];
+      return (data as any) as ScanLog[];
     },
     refetchInterval: 5000,
   });
