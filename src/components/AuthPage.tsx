@@ -62,8 +62,30 @@ export default function AuthPage() {
   const busy = isLoading || isGoogleLoading;
 
   return (
-    <div className="flex min-h-dvh items-center justify-center bg-muted/30 p-4">
-      <div className="w-full max-w-sm">
+    <div className="relative flex min-h-dvh items-center justify-center bg-[#0B0F1A] p-4 overflow-hidden">
+      {/* Radar Background Effect */}
+      <div className="absolute inset-0 pointer-events-none opacity-20">
+        <div className="absolute inset-0 flex items-center justify-center">
+          {/* Concentric circles */}
+          <div className="absolute border border-radar/30 rounded-full w-[200px] h-[200px]" />
+          <div className="absolute border border-radar/20 rounded-full w-[400px] h-[400px]" />
+          <div className="absolute border border-radar/10 rounded-full w-[600px] h-[600px]" />
+          <div className="absolute border border-radar/5 rounded-full w-[800px] h-[800px]" />
+          <div className="absolute border border-radar/5 rounded-full w-[1000px] h-[1000px]" />
+          
+          {/* Crosshairs */}
+          <div className="absolute h-full w-[1px] bg-radar/10" />
+          <div className="absolute w-full h-[1px] bg-radar/10" />
+          
+          {/* Scanning Sweep */}
+          <div className="absolute w-[1000px] h-[1000px] animate-[spin_4s_linear_infinite] origin-center">
+            <div className="absolute top-0 left-1/2 w-1/2 h-1/2 bg-gradient-to-tr from-radar/20 to-transparent rounded-tr-full origin-bottom-left" />
+            <div className="absolute top-0 left-1/2 w-[2px] h-1/2 bg-radar shadow-[0_0_15px_rgba(56,189,248,0.5)]" />
+          </div>
+        </div>
+      </div>
+
+      <div className="relative z-10 w-full max-w-sm">
         <div className="mb-8 flex flex-col items-center text-center">
           <div className="mb-4 grid h-16 w-16 place-items-center rounded-2xl bg-primary shadow-lg">
             <AnimatedRadarLogo size={38} />
