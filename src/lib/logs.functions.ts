@@ -11,6 +11,11 @@ const eventTypeSchema = z.enum([
   'SEARCH_INSERT_ERROR',
   'N8N_REQUEST_ATTEMPT',
   'SEARCH_CREATED', 
+  'SEARCH_DELETED',
+  'LEADS_DELETED',
+  'LOGS_CLEARED',
+  'SETTINGS_UPDATED',
+  'INTEGRATION_TESTED',
   'N8N_REQUEST_SENT', 
   'N8N_RESPONSE_RECEIVED', 
   'N8N_TIMEOUT',
@@ -20,7 +25,9 @@ const eventTypeSchema = z.enum([
   'RESULTS_SAVED', 
   'RESULTS_FETCHED', 
   'FRONTEND_ERROR', 
-  'SYSTEM_ERROR'
+  'SYSTEM_ERROR',
+  'AUTH_ACTION'
+
 ]);
 
 const eventStatusSchema = z.enum(['started', 'success', 'failed', 'warning']);
@@ -108,5 +115,13 @@ export const clearAllLogs = createServerFn({ method: "POST" })
       .neq('id', '00000000-0000-0000-0000-000000000000'); // Delete all matching RLS
 
     if (error) throw error;
+    const { supabaseAdmin } = await import('@/integrations/supabase/client.server');
+    await supabaseAdmin.from("scan_logs").insert({
+      event_type: 'LOGS_CLEARED',
+      event_status: 'success',
+      message: 'Todos os logs foram limpos pelo administrador',
+    });
+    
     return { success: true };
+
   });

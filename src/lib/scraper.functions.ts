@@ -95,7 +95,21 @@ export const updateIntegrationSettings = createServerFn({ method: "POST" })
       );
 
     if (error) throw error;
+
+    await serverLogScanEvent({
+      eventType: 'SETTINGS_UPDATED',
+      eventStatus: 'success',
+      message: `Configurações do n8n atualizadas${rotate_callback_secret ? ' (Segredo de callback rotacionado)' : ''}`,
+      payload: { 
+        webhook_url, 
+        integration_name,
+        has_secret: !!webhook_secret,
+        rotated_callback: !!rotate_callback_secret
+      }
+    });
+
     return { success: true, callbackSecret: newCallbackSecret };
+
   });
 
 
@@ -137,9 +151,23 @@ export const testIntegration = createServerFn({ method: "POST" })
           .from("n8n_settings")
           .update({ is_connected: true })
           .eq("user_id", userId);
+        await serverLogScanEvent({
+          eventType: 'INTEGRATION_TESTED',
+          eventStatus: 'success',
+          message: 'Teste de integração com n8n concluído com sucesso',
+          payload: { webhookUrl }
+        });
         return { success: true };
+
       } else if (response.status === 401 || response.status === 403) {
+        await serverLogScanEvent({
+          eventType: 'INTEGRATION_TESTED',
+          eventStatus: 'failed',
+          httpStatus: response.status,
+          message: 'Teste de integração falhou: Chave recusada (401/403)'
+        });
         return {
+
           success: false,
           error: "A chave de segurança foi recusada.",
         };
@@ -151,7 +179,13 @@ export const testIntegration = createServerFn({ method: "POST" })
       }
     } catch (err: any) {
       if (err.name === 'AbortError' || err.message?.includes('timeout')) {
+        await serverLogScanEvent({
+          eventType: 'INTEGRATION_TESTED',
+          eventStatus: 'failed',
+          message: 'Teste de integração falhou: Timeout'
+        });
         return { success: false, error: "O n8n não respondeu dentro do tempo esperado." };
+
       }
       return { success: false, error: "Erro ao conectar com o n8n" };
     }
@@ -399,7 +433,16 @@ export const deleteSearch = createServerFn({ method: "POST" })
       .eq("user_id", userId);
 
     if (error) throw error;
+
+    await serverLogScanEvent({
+      searchId: data.searchId,
+      eventType: 'SEARCH_DELETED',
+      eventStatus: 'success',
+      message: 'Busca e dados associados excluídos com sucesso'
+    });
+
     return { success: true };
+
   });
 
 export const getDashboardStats = createServerFn({ method: "POST" })
