@@ -419,13 +419,12 @@ export const deleteSearch = createServerFn({ method: "POST" })
 
     if (ownedError || !owned) throw new Error("Busca não encontrada");
 
-    // Deletar logs associados primeiro (para evitar erro de FK se não estiver em cascata no DB)
-    await supabase.from("scan_logs").delete().eq("search_id", data.searchId);
-    
-    // Deletar leads associados
+    // Deletar leads associados (leads são dados de resultado que devem sumir com a busca)
     await supabase.from("leads").delete().eq("search_id", data.searchId);
     
     // Deletar a busca
+    // Como alteramos a FK para ON DELETE SET NULL, os registros em scan_logs permanecerão
+    // mas com search_id = NULL.
     const { error } = await supabase
       .from("searches")
       .delete()
@@ -434,11 +433,16 @@ export const deleteSearch = createServerFn({ method: "POST" })
 
     if (error) throw error;
 
+    // Registrar log de exclusão (sem search_id vinculado, mas com info no payload)
     await serverLogScanEvent({
-      searchId: data.searchId,
       eventType: 'SEARCH_DELETED',
       eventStatus: 'success',
-      message: 'Busca e dados associados excluídos com sucesso'
+      message: 'Busca excluída pelo usuário (Logs preservados)',
+      payload: { 
+        deletedSearchId: data.searchId,
+        deletedBy: userId,
+        timestamp: new Date().toISOString()
+      }
     });
 
     return { success: true };
