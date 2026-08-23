@@ -1,6 +1,8 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { z } from 'zod';
 import { serverLogScanEvent } from '@/lib/logs.server';
+import { safeWebhookFetch } from '@/lib/server/webhook-security';
+
 
 const startSearchSchema = z.object({
   searchId: z.string().uuid(),
