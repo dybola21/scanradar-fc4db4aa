@@ -27,7 +27,9 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { supabase } from "@/integrations/supabase/client";
 import { getIntegrationStatus } from "@/lib/scraper.functions";
+import { logScanEvent } from "@/lib/logs.functions";
 import { useServerFn } from "@tanstack/react-start";
+
 import { useQuery } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";
@@ -52,6 +54,8 @@ export default function DashboardLayout() {
   const [email, setEmail] = useState<string | null>(null);
 
   const fetchStatus = useServerFn(getIntegrationStatus);
+  const logEventFn = useServerFn(logScanEvent);
+
   const { data: integration } = useQuery({
     queryKey: ["integration-status"],
     queryFn: () => fetchStatus(),
@@ -72,13 +76,23 @@ export default function DashboardLayout() {
   };
 
   const handleLogout = async () => {
+    const userEmail = email;
     const { error } = await supabase.auth.signOut();
     if (error) {
       toast.error(error.message);
     } else {
+      await logEventFn({
+        data: {
+          eventType: 'AUTH_ACTION' as any,
+          eventStatus: 'success',
+          message: `Usuário deslogado: ${userEmail}`,
+          payload: { email: userEmail }
+        }
+      }).catch(console.error);
       navigate({ to: "/auth" });
     }
   };
+
 
   const connectionState = !integration?.configured
     ? { label: "Integração não configurada", tone: "bg-muted-foreground" }
