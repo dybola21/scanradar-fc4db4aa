@@ -117,11 +117,12 @@ export const clearAllLogs = createServerFn({ method: "POST" })
     if (error) throw error;
     const { supabaseAdmin } = await import('@/integrations/supabase/client.server');
     await supabaseAdmin.from("scan_logs").insert({
-      event_type: 'LOGS_CLEARED',
+      event_type: 'LOGS_CLEARED' as any,
       event_status: 'success',
       message: 'Todos os logs foram limpos pelo administrador',
     });
     
     return { success: true };
+
 
   });
