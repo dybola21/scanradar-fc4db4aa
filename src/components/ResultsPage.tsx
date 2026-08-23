@@ -326,6 +326,29 @@ export default function ResultsPage() {
           title={search.termo}
           actions={
             <>
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <Button variant="outline" className="min-h-11 rounded-xl text-destructive hover:bg-destructive/5 hover:text-destructive">
+                    <Trash2 className="size-4" />
+                    Excluir
+                  </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Tem certeza?</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      Esta ação excluirá permanentemente todos os leads e logs técnicos associados a esta busca. Esta ação não pode ser desfeita.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                    <AlertDialogAction onClick={handleDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                      Excluir
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
+
               <SearchStatusBadge status={search.status} />
               {search.status === "delivery_unknown" && (
                 <Button 
