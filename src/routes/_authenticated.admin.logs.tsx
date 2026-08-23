@@ -126,10 +126,16 @@ function AdminLogsPage() {
   const getEventBadge = (type: string) => {
     const labels: Record<string, string> = {
       SEARCH_CREATED: 'Busca Criada',
+      SEARCH_DELETED: 'Busca Excluída',
+      LEADS_DELETED: 'Leads Removidos',
+      LOGS_CLEARED: 'Logs Limpos',
+      SETTINGS_UPDATED: 'Ajuste Config',
+      INTEGRATION_TESTED: 'Teste Conexão',
       FLOW_STARTED: 'Início Fluxo',
       START_SEARCH_ENTERED: 'Entrada Backend',
       AUTH_SUCCESS: 'Auth OK',
       AUTH_ERROR: 'Erro Auth',
+      AUTH_ACTION: 'Ação Auth',
       SEARCH_INSERT_SUCCESS: 'Insert OK',
       SEARCH_INSERT_ERROR: 'Erro Insert',
       N8N_REQUEST_ATTEMPT: 'Tentativa n8n',
@@ -142,6 +148,7 @@ function AdminLogsPage() {
       RESULTS_SAVED: 'Persistência',
       FRONTEND_ERROR: 'Erro Frontend',
       SYSTEM_ERROR: 'Erro Sistema'
+
     };
     return <Badge variant="outline" className="font-mono text-[10px] uppercase">{labels[type] || type}</Badge>;
   };
@@ -205,7 +212,10 @@ function AdminLogsPage() {
             <option value="all">Todos eventos</option>
             <option value="N8N_REQUEST_SENT">Pedidos n8n</option>
             <option value="CALLBACK_RECEIVED">Callbacks</option>
+            <option value="SEARCH_CREATED">Novas Buscas</option>
+            <option value="SETTINGS_UPDATED">Ajustes Config</option>
             <option value="SYSTEM_ERROR">Apenas Erros</option>
+
           </select>
         </div>
       </div>

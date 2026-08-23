@@ -1,5 +1,7 @@
 import { createHash } from 'crypto';
 import dns from 'dns';
+import { serverLogScanEvent } from '../logs.server';
+
 import { promisify } from 'util';
 import { isIP } from 'net';
 
@@ -130,8 +132,17 @@ export async function validateWebhookUrl(url: string): Promise<{ valid: boolean;
 export async function safeWebhookFetch(url: string, options: RequestInit = {}): Promise<Response> {
   const validation = await validateWebhookUrl(url);
   if (!validation.valid) {
-    throw new Error(validation.error);
+    const errorMsg = validation.error || 'URL inválida';
+    await serverLogScanEvent({
+      eventType: 'SYSTEM_ERROR' as any,
+      eventStatus: 'failed',
+      errorMessage: errorMsg,
+      message: `Bloqueio de segurança (SSRF): ${url.replace(/(https?:\/\/)([^@]+@)?([^\/]+)/, '$1$3')}`
+    });
+    throw new Error(errorMsg);
   }
+
+
 
   // TanStack Start / Node environment
   // We disable redirects and set a strict timeout

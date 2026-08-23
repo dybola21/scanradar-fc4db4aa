@@ -1,5 +1,8 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { logScanEvent } from "@/lib/logs.functions";
+import { useServerFn } from "@tanstack/react-start";
+
 import { useNavigate } from "@tanstack/react-router";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -32,6 +35,28 @@ export default function AuthPage() {
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
   const [isSignUp, setIsSignUp] = useState(false);
   const navigate = useNavigate();
+  const logEventFn = useServerFn(logScanEvent);
+
+  useEffect(() => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      if (event === 'SIGNED_IN' && session) {
+        await logEventFn({
+          data: {
+            eventType: 'AUTH_ACTION' as any,
+            eventStatus: 'success',
+            message: `Usuário logado: ${session.user.email}`,
+            payload: { email: session.user.email, provider: session.user.app_metadata.provider }
+          }
+        }).catch(console.error);
+      }
+      if (event === 'SIGNED_OUT') {
+        // signed_out case is harder to log since session is gone, but we could log it if needed
+      }
+    });
+
+    return () => subscription.unsubscribe();
+  }, [logEventFn]);
+
 
   const handleAuth = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -54,7 +79,17 @@ export default function AuthPage() {
       }
     } catch (error: any) {
       toast.error(error?.message ?? "Não foi possível concluir a operação.");
+      await logEventFn({
+        data: {
+          eventType: 'AUTH_ACTION' as any,
+          eventStatus: 'failed',
+          message: `Falha na autenticação: ${email}`,
+          errorMessage: error?.message,
+          payload: { email, isSignUp }
+        }
+      }).catch(console.error);
     } finally {
+
       setIsLoading(false);
     }
   };

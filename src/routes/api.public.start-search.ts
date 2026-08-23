@@ -1,6 +1,8 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { z } from 'zod';
 import { serverLogScanEvent } from '@/lib/logs.server';
+import { safeWebhookFetch } from '@/lib/server/webhook-security';
+
 
 const startSearchSchema = z.object({
   searchId: z.string().uuid(),
@@ -126,17 +128,16 @@ export const Route = createFileRoute('/api/public/start-search')({
           };
 
           try {
-            const response = await fetch(n8nWebhookUrl, {
+            const response = await safeWebhookFetch(n8nWebhookUrl, {
               method: 'POST',
               headers: {
                 'Content-Type': 'application/json',
                 ...(n8nWebhookSecret ? { 'X-Webhook-Secret': n8nWebhookSecret } : {}),
                 'X-Idempotency-Key': searchId,
               },
-
               body: JSON.stringify(n8nPayload),
-              redirect: 'manual',
             });
+
 
             const durationMs = Date.now() - startTime;
             const responseText = await response.clone().text().catch(() => 'N/A');
