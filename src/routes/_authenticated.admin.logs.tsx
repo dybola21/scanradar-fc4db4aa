@@ -264,7 +264,7 @@ function AdminLogsPage() {
                       </span>
                       <span className="flex items-center gap-1">
                         <Search className="size-3" />
-                        ID: {log.search_id.slice(0, 8)}...
+                        ID: {log.search_id ? `${log.search_id.slice(0, 8)}...` : 'N/A (Excluída)'}
                       </span>
                       {log.http_status && (
                         <span className={cn(
