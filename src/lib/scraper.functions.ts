@@ -385,7 +385,13 @@ export const deleteSearch = createServerFn({ method: "POST" })
 
     if (ownedError || !owned) throw new Error("Busca não encontrada");
 
+    // Deletar logs associados primeiro (para evitar erro de FK se não estiver em cascata no DB)
+    await supabase.from("scan_logs").delete().eq("search_id", data.searchId);
+    
+    // Deletar leads associados
     await supabase.from("leads").delete().eq("search_id", data.searchId);
+    
+    // Deletar a busca
     const { error } = await supabase
       .from("searches")
       .delete()
