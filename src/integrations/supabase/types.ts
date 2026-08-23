@@ -275,6 +275,12 @@ export type Database = {
         | "SEARCH_INSERT_SUCCESS"
         | "SEARCH_INSERT_ERROR"
         | "N8N_REQUEST_ATTEMPT"
+        | "SEARCH_DELETED"
+        | "LEADS_DELETED"
+        | "LOGS_CLEARED"
+        | "SETTINGS_UPDATED"
+        | "INTEGRATION_TESTED"
+        | "AUTH_ACTION"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -423,6 +429,12 @@ export const Constants = {
         "SEARCH_INSERT_SUCCESS",
         "SEARCH_INSERT_ERROR",
         "N8N_REQUEST_ATTEMPT",
+        "SEARCH_DELETED",
+        "LEADS_DELETED",
+        "LOGS_CLEARED",
+        "SETTINGS_UPDATED",
+        "INTEGRATION_TESTED",
+        "AUTH_ACTION",
       ],
     },
   },
