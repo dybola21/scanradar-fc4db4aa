@@ -1,6 +1,8 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { clearAllLogs } from '@/lib/logs.functions';
+import { useServerFn } from '@tanstack/react-start';
 import { PageHeader } from '@/components/ui-kit/PageHeader';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
