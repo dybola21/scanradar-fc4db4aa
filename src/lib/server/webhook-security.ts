@@ -132,14 +132,16 @@ export async function validateWebhookUrl(url: string): Promise<{ valid: boolean;
 export async function safeWebhookFetch(url: string, options: RequestInit = {}): Promise<Response> {
   const validation = await validateWebhookUrl(url);
   if (!validation.valid) {
+    const errorMsg = validation.error || 'URL inválida';
     await serverLogScanEvent({
-      eventType: 'SYSTEM_ERROR',
+      eventType: 'SYSTEM_ERROR' as any,
       eventStatus: 'failed',
-      errorMessage: validation.error,
+      errorMessage: errorMsg,
       message: `Bloqueio de segurança (SSRF): ${url.replace(/(https?:\/\/)([^@]+@)?([^\/]+)/, '$1$3')}`
     });
-    throw new Error(validation.error);
+    throw new Error(errorMsg);
   }
+
 
 
   // TanStack Start / Node environment
