@@ -1,9 +1,9 @@
 import { useMemo, useState, useEffect } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { getSearchDetails, checkSearchStatus } from "@/lib/scraper.functions";
+import { getSearchDetails, checkSearchStatus, deleteSearch } from "@/lib/scraper.functions";
 import { logScanEvent } from "@/lib/logs.functions";
-import { useParams, Link } from "@tanstack/react-router";
+import { useParams, Link, useNavigate } from "@tanstack/react-router";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -25,7 +25,19 @@ import {
   Loader2,
   Clock,
   AlertTriangle,
+  Trash2,
 } from "lucide-react";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { exportToCSV, exportToExcel } from "@/lib/export-utils";
 import { toast } from "sonner";
 import { classifyWebsiteUrl } from "@/lib/website-utils";
@@ -41,8 +53,10 @@ import { supabase } from "@/integrations/supabase/client";
 export default function ResultsPage() {
   const { searchId } = useParams({ from: "/_authenticated/results/$searchId" });
   const queryClient = useQueryClient();
+  const navigate = useNavigate();
   const fetchDetails = useServerFn(getSearchDetails);
   const checkStatusFn = useServerFn(checkSearchStatus);
+  const deleteSearchFn = useServerFn(deleteSearch);
   const logEventFn = useServerFn(logScanEvent);
 
   const [presenceFilter, setPresenceFilter] = useState("all");
@@ -140,6 +154,17 @@ export default function ResultsPage() {
       });
     } finally {
       setIsReconciling(false);
+    }
+  };
+
+  const handleDelete = async () => {
+    try {
+      await deleteSearchFn({ data: { searchId } });
+      toast.success("Busca excluída com sucesso.");
+      navigate({ to: "/history" });
+    } catch (err) {
+      toast.error("Erro ao excluir busca.");
+      console.error(err);
     }
   };
 
@@ -301,6 +326,29 @@ export default function ResultsPage() {
           title={search.termo}
           actions={
             <>
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <Button variant="outline" className="min-h-11 rounded-xl text-destructive hover:bg-destructive/5 hover:text-destructive">
+                    <Trash2 className="size-4" />
+                    Excluir
+                  </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Tem certeza?</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      Esta ação excluirá permanentemente todos os leads e logs técnicos associados a esta busca. Esta ação não pode ser desfeita.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                    <AlertDialogAction onClick={handleDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                      Excluir
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
+
               <SearchStatusBadge status={search.status} />
               {search.status === "delivery_unknown" && (
                 <Button 

@@ -94,3 +94,19 @@ export const logScanEvent = createServerFn({ method: "POST" })
 
     return { success: true };
   });
+
+export const clearAllLogs = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const { supabase } = context;
+
+    // A política RLS garante que o usuário só delete logs de suas próprias buscas.
+    // Como a tabela scan_logs não tem user_id direto, a política usa um subquery na tabela searches.
+    const { error } = await supabase
+      .from("scan_logs" as any)
+      .delete()
+      .neq('id', '00000000-0000-0000-0000-000000000000'); // Delete all matching RLS
+
+    if (error) throw error;
+    return { success: true };
+  });

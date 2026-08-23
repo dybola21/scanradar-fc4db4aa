@@ -1,6 +1,8 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { clearAllLogs } from '@/lib/logs.functions';
+import { useServerFn } from '@tanstack/react-start';
 import { PageHeader } from '@/components/ui-kit/PageHeader';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -47,6 +49,7 @@ function AdminLogsPage() {
   const [typeFilter, setTypeFilter] = useState<string>('all');
   const [expandedLogs, setExpandedLogs] = useState<Set<string>>(new Set());
   const queryClient = useQueryClient();
+  const clearLogsFn = useServerFn(clearAllLogs);
 
   const { data: logs, isLoading, refetch, isRefetching } = useQuery({
     queryKey: ['admin-scan-logs', searchFilter, typeFilter],
@@ -92,12 +95,9 @@ function AdminLogsPage() {
     if (!confirm('Tem certeza que deseja apagar todos os logs? Esta ação não pode ser desfeita.')) return;
     
     try {
-      const { error } = await supabase
-        .from('scan_logs' as any)
-        .delete()
-        .neq('id', '00000000-0000-0000-0000-000000000000'); // Delete all
+      await clearLogsFn();
       
-      if (error) throw error;
+      toast.success('Logs limpos com sucesso');
       toast.success('Logs limpos com sucesso');
       refetch();
     } catch (err) {
