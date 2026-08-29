@@ -160,22 +160,29 @@ export default function AuthPage() {
 
       {/* Right side: Auth Form */}
       <div className="flex w-full flex-col items-center justify-center bg-[#F5F7FA] p-6 lg:w-[45%] lg:p-12">
-        {/* Mobile Logo and Hero (Only visible on small screens) */}
-        <div className="mb-8 flex flex-col items-center lg:hidden">
-          <div className="mb-8 flex items-center">
-            <ScanRadarLogo size={32} theme="light" />
+        {/* Mobile Hero (Only visible on small screens) — mirrors the desktop radar panel */}
+        <div className="mb-8 flex w-full flex-col items-center lg:hidden">
+          <div className="relative -mx-6 -mt-6 mb-6 flex w-[calc(100%+3rem)] flex-col items-center overflow-hidden bg-[#07111F] px-6 pb-8 pt-6">
+            {/* Same grid texture as desktop hero */}
+            <div className="pointer-events-none absolute inset-0 opacity-20">
+              <div className="absolute inset-0 bg-[linear-gradient(rgba(56,189,248,0.1)_1px,transparent_1px),linear-gradient(90deg,rgba(56,189,248,0.1)_1px,transparent_1px)] bg-[size:60px_60px]" />
+            </div>
+
+            <div className="relative z-10 mb-6 flex items-center self-start">
+              <ScanRadarLogo size={32} theme="dark" />
+            </div>
+
+            <div className="relative z-10 mb-4">
+              <AnimatedRadarScene size={280} />
+            </div>
+
+            <h2 className="relative z-10 mb-2 text-center text-2xl font-bold tracking-tight text-[#F6F8FB]">
+              Encontre empresas antes que a oportunidade passe.
+            </h2>
+            <p className="relative z-10 text-center text-sm text-[#9FB1C7]">
+              Mapeie negócios locais e transforme dados públicos em prospecção organizada.
+            </p>
           </div>
-          
-          <div className="relative mb-6 flex aspect-square w-full max-w-[260px] items-center justify-center overflow-hidden rounded-full border border-[#263750] bg-[#07111F] shadow-lg">
-            <div className="pointer-events-none absolute inset-0 rounded-full bg-[linear-gradient(rgba(56,189,248,0.08)_1px,transparent_1px),linear-gradient(90deg,rgba(56,189,248,0.08)_1px,transparent_1px)] bg-[size:40px_40px]" />
-            <AnimatedRadarScene size={200} />
-          </div>
-          <h2 className="mb-2 text-2xl font-bold text-[#0B1220]">
-            Encontre empresas agora.
-          </h2>
-          <p className="mb-4 text-center text-sm text-[#526174]">
-            Transforme dados do Google Maps em leads qualificados.
-          </p>
         </div>
 
         <div className="w-full max-w-[440px]">
