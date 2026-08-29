@@ -9,6 +9,7 @@ import {
 } from "@tanstack/react-router";
 import { useEffect, type ReactNode } from "react";
 import { Toaster } from "@/components/ui/sonner";
+import PwaManager from "@/components/PwaManager";
 import { Target, AlertCircle } from "lucide-react";
 
 import appCss from "../styles.css?url";
