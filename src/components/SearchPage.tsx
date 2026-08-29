@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
+import { useSupabaseSession } from "@/hooks/useSupabaseSession";
 import { startSearch, getSearchHistory, getIntegrationStatus } from "@/lib/scraper.functions";
 import { logScanEvent } from "@/lib/logs.functions";
 import { useMutation, useQuery } from "@tanstack/react-query";
@@ -34,8 +35,9 @@ export default function SearchPage() {
   const [advancedOpen, setAdvancedOpen] = useState(false);
   const [errors, setErrors] = useState<{ termo?: string; cidade?: string; uf?: string }>({});
 
-  const { data: integration } = useQuery({ queryKey: ["integration-status"], queryFn: () => fetchStatus() });
-  const { data: history } = useQuery({ queryKey: ["search-history"], queryFn: () => fetchHistory() });
+  const { isAuthenticated } = useSupabaseSession();
+  const { data: integration } = useQuery({ queryKey: ["integration-status"], queryFn: () => fetchStatus(), enabled: isAuthenticated });
+  const { data: history } = useQuery({ queryKey: ["search-history"], queryFn: () => fetchHistory(), enabled: isAuthenticated });
   const lastSearch = history?.[0];
 
   const searchMutation = useMutation({

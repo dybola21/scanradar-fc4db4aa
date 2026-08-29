@@ -26,6 +26,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { supabase } from "@/integrations/supabase/client";
+import { useSupabaseSession } from "@/hooks/useSupabaseSession";
 import { getIntegrationStatus } from "@/lib/scraper.functions";
 import { logScanEvent } from "@/lib/logs.functions";
 import { useServerFn } from "@tanstack/react-start";
@@ -56,10 +57,12 @@ export default function DashboardLayout() {
   const fetchStatus = useServerFn(getIntegrationStatus);
   const logEventFn = useServerFn(logScanEvent);
 
+  const { isAuthenticated } = useSupabaseSession();
   const { data: integration } = useQuery({
     queryKey: ["integration-status"],
     queryFn: () => fetchStatus(),
     staleTime: 60_000,
+    enabled: isAuthenticated,
   });
 
   useEffect(() => {
