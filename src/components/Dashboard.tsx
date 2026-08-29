@@ -12,28 +12,31 @@ import { EmptyState } from "@/components/ui-kit/EmptyState";
 import { PresenceBadge, SearchStatusBadge } from "@/components/ui-kit/Badges";
 import { PERIOD_OPTIONS, type PeriodValue, type PresenceType } from "@/lib/lead-insights";
 import { cn } from "@/lib/utils";
+import { useSupabaseSession } from "@/hooks/useSupabaseSession";
 
 export default function Dashboard() {
   const [period, setPeriod] = useState<PeriodValue>("30");
   const fetchStats = useServerFn(getDashboardStats);
   const fetchStatus = useServerFn(getIntegrationStatus);
 
+  const { isAuthenticated } = useSupabaseSession();
   const { data: integration, isLoading: isIntegrationLoading } = useQuery({
     queryKey: ["integration-status"],
     queryFn: () => fetchStatus(),
+    enabled: isAuthenticated,
   });
 
   const days = period === "all" ? 0 : (Number(period) as 7 | 30 | 90);
   const { data: stats, isLoading, isError } = useQuery({
     queryKey: ["dashboard-stats", period],
     queryFn: () => fetchStats({ data: { days } }),
-    enabled: Boolean(integration?.configured),
+    enabled: isAuthenticated && Boolean(integration?.configured),
   });
 
   const periodLabel = PERIOD_OPTIONS.find((p) => p.value === period)?.label.toLowerCase() ?? "";
 
   // 1. Loading State
-  if (isLoading || isIntegrationLoading) {
+  if (!isAuthenticated || isLoading || isIntegrationLoading) {
     return (
       <div className="space-y-6">
         <PageHeader title="Carregando dados..." />
