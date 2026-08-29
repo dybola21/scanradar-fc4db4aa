@@ -166,8 +166,9 @@ export default function AuthPage() {
             <ScanRadarLogo size={32} theme="light" />
           </div>
           
-          <div className="mb-6 flex justify-center">
-            <AnimatedRadarScene size={240} />
+          <div className="relative mb-6 flex w-full max-w-[320px] items-center justify-center overflow-hidden rounded-2xl border border-[#263750] bg-[#07111F] py-8 shadow-lg">
+            <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(rgba(56,189,248,0.08)_1px,transparent_1px),linear-gradient(90deg,rgba(56,189,248,0.08)_1px,transparent_1px)] bg-[size:40px_40px]" />
+            <AnimatedRadarScene size={220} />
           </div>
           <h2 className="mb-2 text-2xl font-bold text-[#0B1220]">
             Encontre empresas agora.
