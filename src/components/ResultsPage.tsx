@@ -544,7 +544,13 @@ export default function ResultsPage() {
               </TableHeader>
               <TableBody>
                 {filtered.map((lead) => (
-                  <TableRow key={lead.id} className={cn(selected.has(lead.id) && "bg-secondary/60")}>
+                  <TableRow
+                    key={lead.id}
+                    className={cn(
+                      selected.has(lead.id) && "bg-secondary/60",
+                      lead.contacted && "bg-success-soft/40",
+                    )}
+                  >
                     <TableCell className="px-4 py-3">
                       <Checkbox
                         checked={selected.has(lead.id)}
@@ -553,12 +559,23 @@ export default function ResultsPage() {
                       />
                     </TableCell>
                     <TableCell className="max-w-[260px] px-4 py-3">
-                      <p className="truncate text-sm font-medium text-foreground">{lead.nome ?? "Sem nome"}</p>
-                      <p className="flex items-center gap-1 truncate text-xs text-muted-foreground">
-                        <MapPin className="size-3 shrink-0" />
-                        {lead.endereco || [lead.bairro, lead.cidade, lead.uf].filter(Boolean).join(", ") || "—"}
-                      </p>
-
+                      <div className="flex items-center gap-2">
+                        {lead.contacted && (
+                          <span
+                            title="Já contatado"
+                            className="inline-flex size-5 shrink-0 items-center justify-center rounded-full bg-success text-success-foreground"
+                          >
+                            <CheckCircle2 className="size-3.5" />
+                          </span>
+                        )}
+                        <div className="min-w-0">
+                          <p className="truncate text-sm font-medium text-foreground">{lead.nome ?? "Sem nome"}</p>
+                          <p className="flex items-center gap-1 truncate text-xs text-muted-foreground">
+                            <MapPin className="size-3 shrink-0" />
+                            {lead.endereco || [lead.bairro, lead.cidade, lead.uf].filter(Boolean).join(", ") || "—"}
+                          </p>
+                        </div>
+                      </div>
                     </TableCell>
                     <TableCell className="max-w-[240px] px-4 py-3">
                       <div className="space-y-0.5 text-sm">
