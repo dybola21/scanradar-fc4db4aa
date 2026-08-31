@@ -404,6 +404,50 @@ export const getSearchDetails = createServerFn({ method: "POST" })
     return { search, leads };
   });
 
+export const toggleLeadContacted = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .validator(z.object({ leadId: z.string().uuid(), contacted: z.boolean() }))
+  .handler(async ({ data, context }) => {
+    const { supabase, userId } = context;
+    const { leadId, contacted } = data;
+
+    // Verify the lead belongs to a search owned by the user
+    const { data: lead, error: leadError } = await supabase
+      .from("leads")
+      .select("id, search_id")
+      .eq("id", leadId)
+      .maybeSingle();
+
+    if (leadError) throw leadError;
+    if (!lead) throw new Error("Lead não encontrado");
+
+    const { data: owned, error: ownedError } = await supabase
+      .from("searches")
+      .select("id")
+      .eq("id", lead.search_id)
+      .eq("user_id", userId)
+      .maybeSingle();
+
+    if (ownedError || !owned) throw new Error("Lead não encontrado");
+
+    const { error } = await supabase
+      .from("leads")
+      .update({ contacted })
+      .eq("id", leadId);
+
+    if (error) throw error;
+
+    await serverLogScanEvent({
+      searchId: lead.search_id,
+      eventType: 'AUTH_ACTION',
+      eventStatus: 'success',
+      message: `Lead marcado como ${contacted ? 'contatado' : 'não contatado'}`,
+      payload: { leadId, contacted }
+    });
+
+    return { success: true, leadId, contacted };
+  });
+
 export const deleteSearch = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .validator(z.object({ searchId: z.string().uuid() }))

@@ -1,7 +1,7 @@
 import { useMemo, useState, useEffect } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { getSearchDetails, checkSearchStatus, deleteSearch } from "@/lib/scraper.functions";
+import { getSearchDetails, checkSearchStatus, deleteSearch, toggleLeadContacted } from "@/lib/scraper.functions";
 import { logScanEvent } from "@/lib/logs.functions";
 import { useParams, Link, useNavigate } from "@tanstack/react-router";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -26,6 +26,7 @@ import {
   Clock,
   AlertTriangle,
   Trash2,
+  CheckCircle2,
 } from "lucide-react";
 import {
   AlertDialog,
@@ -58,8 +59,11 @@ export default function ResultsPage() {
   const checkStatusFn = useServerFn(checkSearchStatus);
   const deleteSearchFn = useServerFn(deleteSearch);
   const logEventFn = useServerFn(logScanEvent);
+  const toggleContactedFn = useServerFn(toggleLeadContacted);
+  const [togglingId, setTogglingId] = useState<string | null>(null);
 
   const [presenceFilter, setPresenceFilter] = useState("all");
+  const [contactedFilter, setContactedFilter] = useState("all");
   const [sortBy, setSortBy] = useState("opportunity");
   const [query, setQuery] = useState("");
   const [selected, setSelected] = useState<Set<string>>(new Set());
@@ -200,7 +204,11 @@ export default function ResultsPage() {
         (presenceFilter === "no_own_site" && lead.classification.hasOwnWebsite === false) ||
         (presenceFilter === "with_own_site" && lead.classification.hasOwnWebsite === true) ||
         lead.classification.type === presenceFilter;
-      return matchesText && matchesPresence;
+      const matchesContacted =
+        contactedFilter === "all" ||
+        (contactedFilter === "contacted" && Boolean(lead.contacted)) ||
+        (contactedFilter === "not_contacted" && !lead.contacted);
+      return matchesText && matchesPresence && matchesContacted;
     });
 
     return rows.sort((a, b) => {
@@ -214,7 +222,7 @@ export default function ResultsPage() {
       }
       return 0;
     });
-  }, [classified, presenceFilter, sortBy, query]);
+  }, [classified, presenceFilter, contactedFilter, sortBy, query]);
 
   const selectedLeads = filtered.filter((lead) => selected.has(lead.id));
   const allVisibleSelected = filtered.length > 0 && filtered.every((lead) => selected.has(lead.id));
@@ -261,6 +269,36 @@ export default function ResultsPage() {
       .join("\n");
     await navigator.clipboard.writeText(text);
     toast.success(`${rows.length} contatos copiados.`);
+  };
+
+  const handleToggleContacted = async (leadId: string, current: boolean) => {
+    const next = !current;
+    setTogglingId(leadId);
+    // Otimista: atualiza o cache imediatamente
+    queryClient.setQueryData(["search-details", searchId], (old: any) => {
+      if (!old) return old;
+      return {
+        ...old,
+        leads: old.leads.map((l: any) => (l.id === leadId ? { ...l, contacted: next } : l)),
+      };
+    });
+    try {
+      await toggleContactedFn({ data: { leadId, contacted: next } });
+      toast.success(next ? "Marcado como contatado." : "Marcado como não contatado.");
+    } catch (err) {
+      // Reverte em caso de erro
+      queryClient.setQueryData(["search-details", searchId], (old: any) => {
+        if (!old) return old;
+        return {
+          ...old,
+          leads: old.leads.map((l: any) => (l.id === leadId ? { ...l, contacted: current } : l)),
+        };
+      });
+      toast.error("Erro ao atualizar status de contato.");
+      console.error(err);
+    } finally {
+      setTogglingId(null);
+    }
   };
 
   if (isLoading) {
@@ -409,6 +447,21 @@ export default function ResultsPage() {
         </div>
         <div className="flex flex-wrap gap-3">
           <div className="min-w-0 space-y-1">
+            <label htmlFor="contacted-filter" className="text-xs font-medium text-muted-foreground">
+              Contato
+            </label>
+            <Select value={contactedFilter} onValueChange={setContactedFilter}>
+              <SelectTrigger id="contacted-filter" className="h-11 w-48 rounded-xl">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent className="rounded-xl">
+                <SelectItem value="all">Todos</SelectItem>
+                <SelectItem value="not_contacted">Não contatados</SelectItem>
+                <SelectItem value="contacted">Já contatados</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="min-w-0 space-y-1">
             <label htmlFor="presence-filter" className="text-xs font-medium text-muted-foreground">
               Presença digital
             </label>
@@ -510,7 +563,13 @@ export default function ResultsPage() {
               </TableHeader>
               <TableBody>
                 {filtered.map((lead) => (
-                  <TableRow key={lead.id} className={cn(selected.has(lead.id) && "bg-secondary/60")}>
+                  <TableRow
+                    key={lead.id}
+                    className={cn(
+                      selected.has(lead.id) && "bg-secondary/60",
+                      lead.contacted && "bg-success-soft/40",
+                    )}
+                  >
                     <TableCell className="px-4 py-3">
                       <Checkbox
                         checked={selected.has(lead.id)}
@@ -519,12 +578,23 @@ export default function ResultsPage() {
                       />
                     </TableCell>
                     <TableCell className="max-w-[260px] px-4 py-3">
-                      <p className="truncate text-sm font-medium text-foreground">{lead.nome ?? "Sem nome"}</p>
-                      <p className="flex items-center gap-1 truncate text-xs text-muted-foreground">
-                        <MapPin className="size-3 shrink-0" />
-                        {lead.endereco || [lead.bairro, lead.cidade, lead.uf].filter(Boolean).join(", ") || "—"}
-                      </p>
-
+                      <div className="flex items-center gap-2">
+                        {lead.contacted && (
+                          <span
+                            title="Já contatado"
+                            className="inline-flex size-5 shrink-0 items-center justify-center rounded-full bg-success text-success-foreground"
+                          >
+                            <CheckCircle2 className="size-3.5" />
+                          </span>
+                        )}
+                        <div className="min-w-0">
+                          <p className="truncate text-sm font-medium text-foreground">{lead.nome ?? "Sem nome"}</p>
+                          <p className="flex items-center gap-1 truncate text-xs text-muted-foreground">
+                            <MapPin className="size-3 shrink-0" />
+                            {lead.endereco || [lead.bairro, lead.cidade, lead.uf].filter(Boolean).join(", ") || "—"}
+                          </p>
+                        </div>
+                      </div>
                     </TableCell>
                     <TableCell className="max-w-[240px] px-4 py-3">
                       <div className="space-y-0.5 text-sm">
@@ -556,6 +626,26 @@ export default function ResultsPage() {
                     </TableCell>
                     <TableCell className="px-4 py-3">
                       <div className="flex items-center justify-end gap-2">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => handleToggleContacted(lead.id, Boolean(lead.contacted))}
+                          disabled={togglingId === lead.id}
+                          aria-label={lead.contacted ? "Desmarcar como contatado" : "Marcar como contatado"}
+                          title={lead.contacted ? "Já contatado (clique para desmarcar)" : "Marcar como contatado"}
+                          className={cn(
+                            "size-9 rounded-lg",
+                            lead.contacted
+                              ? "bg-success text-success-foreground hover:bg-success/90"
+                              : "text-muted-foreground hover:bg-success-soft hover:text-success",
+                          )}
+                        >
+                          {togglingId === lead.id ? (
+                            <Loader2 className="size-4 animate-spin" />
+                          ) : (
+                            <CheckCircle2 className="size-4" />
+                          )}
+                        </Button>
                         {lead.telefone ? (
                           <Button asChild variant="outline" size="sm" className="min-h-9 rounded-lg">
                             <a

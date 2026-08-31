@@ -18,6 +18,7 @@ export type Database = {
         Row: {
           bairro: string | null
           cidade: string | null
+          contacted: boolean
           created_at: string
           email: string | null
           email2: string | null
@@ -34,6 +35,7 @@ export type Database = {
         Insert: {
           bairro?: string | null
           cidade?: string | null
+          contacted?: boolean
           created_at?: string
           email?: string | null
           email2?: string | null
@@ -50,6 +52,7 @@ export type Database = {
         Update: {
           bairro?: string | null
           cidade?: string | null
+          contacted?: boolean
           created_at?: string
           email?: string | null
           email2?: string | null
