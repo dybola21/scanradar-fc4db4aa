@@ -267,6 +267,36 @@ export default function ResultsPage() {
     toast.success(`${rows.length} contatos copiados.`);
   };
 
+  const handleToggleContacted = async (leadId: string, current: boolean) => {
+    const next = !current;
+    setTogglingId(leadId);
+    // Otimista: atualiza o cache imediatamente
+    queryClient.setQueryData(["search-details", searchId], (old: any) => {
+      if (!old) return old;
+      return {
+        ...old,
+        leads: old.leads.map((l: any) => (l.id === leadId ? { ...l, contacted: next } : l)),
+      };
+    });
+    try {
+      await toggleContactedFn({ data: { leadId, contacted: next } });
+      toast.success(next ? "Marcado como contatado." : "Marcado como não contatado.");
+    } catch (err) {
+      // Reverte em caso de erro
+      queryClient.setQueryData(["search-details", searchId], (old: any) => {
+        if (!old) return old;
+        return {
+          ...old,
+          leads: old.leads.map((l: any) => (l.id === leadId ? { ...l, contacted: current } : l)),
+        };
+      });
+      toast.error("Erro ao atualizar status de contato.");
+      console.error(err);
+    } finally {
+      setTogglingId(null);
+    }
+  };
+
   if (isLoading) {
     return (
       <div className="space-y-6">
