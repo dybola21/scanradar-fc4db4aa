@@ -64,6 +64,7 @@ export default function ResultsPage() {
   const [togglingId, setTogglingId] = useState<string | null>(null);
 
   const [presenceFilter, setPresenceFilter] = useState("all");
+  const [contactedFilter, setContactedFilter] = useState("all");
   const [sortBy, setSortBy] = useState("opportunity");
   const [query, setQuery] = useState("");
   const [selected, setSelected] = useState<Set<string>>(new Set());
@@ -204,7 +205,11 @@ export default function ResultsPage() {
         (presenceFilter === "no_own_site" && lead.classification.hasOwnWebsite === false) ||
         (presenceFilter === "with_own_site" && lead.classification.hasOwnWebsite === true) ||
         lead.classification.type === presenceFilter;
-      return matchesText && matchesPresence;
+      const matchesContacted =
+        contactedFilter === "all" ||
+        (contactedFilter === "contacted" && Boolean(lead.contacted)) ||
+        (contactedFilter === "not_contacted" && !lead.contacted);
+      return matchesText && matchesPresence && matchesContacted;
     });
 
     return rows.sort((a, b) => {
