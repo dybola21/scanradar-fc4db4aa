@@ -12,6 +12,7 @@ export const leadSchema = z.object({
   email: z.string().nullable(),
   email2: z.string().nullable(),
   created_at: z.string(),
+  contacted: z.boolean().nullable().optional(),
 });
 
 export const searchSchema = z.object({
