@@ -607,6 +607,26 @@ export default function ResultsPage() {
                     </TableCell>
                     <TableCell className="px-4 py-3">
                       <div className="flex items-center justify-end gap-2">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => handleToggleContacted(lead.id, Boolean(lead.contacted))}
+                          disabled={togglingId === lead.id}
+                          aria-label={lead.contacted ? "Desmarcar como contatado" : "Marcar como contatado"}
+                          title={lead.contacted ? "Já contatado (clique para desmarcar)" : "Marcar como contatado"}
+                          className={cn(
+                            "size-9 rounded-lg",
+                            lead.contacted
+                              ? "bg-success text-success-foreground hover:bg-success/90"
+                              : "text-muted-foreground hover:bg-success-soft hover:text-success",
+                          )}
+                        >
+                          {togglingId === lead.id ? (
+                            <Loader2 className="size-4 animate-spin" />
+                          ) : (
+                            <CheckCircle2 className="size-4" />
+                          )}
+                        </Button>
                         {lead.telefone ? (
                           <Button asChild variant="outline" size="sm" className="min-h-9 rounded-lg">
                             <a
