@@ -223,7 +223,7 @@ export default function ResultsPage() {
       }
       return 0;
     });
-  }, [classified, presenceFilter, sortBy, query]);
+  }, [classified, presenceFilter, contactedFilter, sortBy, query]);
 
   const selectedLeads = filtered.filter((lead) => selected.has(lead.id));
   const allVisibleSelected = filtered.length > 0 && filtered.every((lead) => selected.has(lead.id));
@@ -447,6 +447,21 @@ export default function ResultsPage() {
           />
         </div>
         <div className="flex flex-wrap gap-3">
+          <div className="min-w-0 space-y-1">
+            <label htmlFor="contacted-filter" className="text-xs font-medium text-muted-foreground">
+              Contato
+            </label>
+            <Select value={contactedFilter} onValueChange={setContactedFilter}>
+              <SelectTrigger id="contacted-filter" className="h-11 w-48 rounded-xl">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent className="rounded-xl">
+                <SelectItem value="all">Todos</SelectItem>
+                <SelectItem value="not_contacted">Não contatados</SelectItem>
+                <SelectItem value="contacted">Já contatados</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
           <div className="min-w-0 space-y-1">
             <label htmlFor="presence-filter" className="text-xs font-medium text-muted-foreground">
               Presença digital
