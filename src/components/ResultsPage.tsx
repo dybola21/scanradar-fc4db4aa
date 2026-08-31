@@ -1,7 +1,7 @@
 import { useMemo, useState, useEffect } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { getSearchDetails, checkSearchStatus, deleteSearch } from "@/lib/scraper.functions";
+import { getSearchDetails, checkSearchStatus, deleteSearch, toggleLeadContacted } from "@/lib/scraper.functions";
 import { logScanEvent } from "@/lib/logs.functions";
 import { useParams, Link, useNavigate } from "@tanstack/react-router";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -26,6 +26,8 @@ import {
   Clock,
   AlertTriangle,
   Trash2,
+  CheckCircle2,
+  CircleCheck,
 } from "lucide-react";
 import {
   AlertDialog,
@@ -58,6 +60,8 @@ export default function ResultsPage() {
   const checkStatusFn = useServerFn(checkSearchStatus);
   const deleteSearchFn = useServerFn(deleteSearch);
   const logEventFn = useServerFn(logScanEvent);
+  const toggleContactedFn = useServerFn(toggleLeadContacted);
+  const [togglingId, setTogglingId] = useState<string | null>(null);
 
   const [presenceFilter, setPresenceFilter] = useState("all");
   const [sortBy, setSortBy] = useState("opportunity");
