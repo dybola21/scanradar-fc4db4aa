@@ -38,16 +38,21 @@ export default function AuthPage() {
   const logEventFn = useServerFn(logScanEvent);
 
   useEffect(() => {
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       if (event === 'SIGNED_IN' && session) {
-        await logEventFn({
-          data: {
-            eventType: 'AUTH_ACTION' as any,
-            eventStatus: 'success',
-            message: `Usuário logado: ${session.user.email}`,
-            payload: { email: session.user.email, provider: session.user.app_metadata.provider }
-          }
-        }).catch(console.error);
+        // Auth callbacks must return immediately. Waiting for a protected
+        // server function here can deadlock setSession during Google OAuth,
+        // because its middleware also needs to read the session being saved.
+        window.setTimeout(() => {
+          void logEventFn({
+            data: {
+              eventType: 'AUTH_ACTION' as any,
+              eventStatus: 'success',
+              message: `Usuário logado: ${session.user.email}`,
+              payload: { email: session.user.email, provider: session.user.app_metadata.provider }
+            }
+          }).catch(console.error);
+        }, 0);
       }
       if (event === 'SIGNED_OUT') {
         // signed_out case is harder to log since session is gone, but we could log it if needed
