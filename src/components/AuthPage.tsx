@@ -99,11 +99,11 @@ export default function AuthPage() {
     setIsGoogleLoading(true);
     try {
       const result = await lovable.auth.signInWithOAuth("google", {
-        redirect_uri: window.location.origin,
+        redirect_uri: `${window.location.origin}/auth/callback`,
       });
       if (result.error) throw result.error;
       if (result.redirected) return;
-      navigate({ to: "/dashboard" });
+      navigate({ to: "/auth/callback" });
     } catch (error: any) {
       toast.error(error?.message ?? "Não foi possível entrar com o Google.");
     } finally {
