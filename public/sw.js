@@ -1,5 +1,5 @@
 /* ScanRadar service worker — offline shell + safe production asset caching */
-const VERSION = "scanradar-v2";
+const VERSION = "scanradar-v3";
 const SHELL = ["/icons/icon-192.png", "/icons/icon-512.png", "/manifest.webmanifest"];
 
 self.addEventListener("install", (event) => {
@@ -33,6 +33,7 @@ self.addEventListener("fetch", (event) => {
   if (
     url.pathname.startsWith("/api/") ||
     url.pathname.startsWith("/_serverFn") ||
+    url.pathname.startsWith("/~oauth") ||
     url.pathname.startsWith("/src/") ||
     url.pathname.startsWith("/node_modules/") ||
     url.pathname.startsWith("/@") ||
