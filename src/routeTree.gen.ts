@@ -16,6 +16,7 @@ import { Route as AuthenticatedDashboardRouteImport } from './routes/_authentica
 import { Route as AuthenticatedHistoryRouteImport } from './routes/_authenticated.history'
 import { Route as AuthenticatedSearchRouteImport } from './routes/_authenticated.search'
 import { Route as AuthenticatedSettingsRouteImport } from './routes/_authenticated.settings'
+import { Route as AuthCallbackRouteImport } from './routes/auth.callback'
 import { Route as AuthenticatedAdminLogsRouteImport } from './routes/_authenticated.admin.logs'
 import { Route as AuthenticatedResultsSearchIdRouteImport } from './routes/_authenticated.results.$searchId'
 import { Route as ApiPublicResultsRouteImport } from './routes/api.public.results'
@@ -56,6 +57,11 @@ const AuthenticatedSettingsRoute = AuthenticatedSettingsRouteImport.update({
   path: '/settings',
   getParentRoute: () => AuthenticatedRoute,
 } as any)
+const AuthCallbackRoute = AuthCallbackRouteImport.update({
+  id: '/callback',
+  path: '/callback',
+  getParentRoute: () => AuthRoute,
+} as any)
 const AuthenticatedAdminLogsRoute = AuthenticatedAdminLogsRouteImport.update({
   id: '/admin/logs',
   path: '/admin/logs',
@@ -86,11 +92,12 @@ const ApiPublicHooksScheduledTaskRoute =
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
-  '/auth': typeof AuthRoute
+  '/auth': typeof AuthRouteWithChildren
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/history': typeof AuthenticatedHistoryRoute
   '/search': typeof AuthenticatedSearchRoute
   '/settings': typeof AuthenticatedSettingsRoute
+  '/auth/callback': typeof AuthCallbackRoute
   '/admin/logs': typeof AuthenticatedAdminLogsRoute
   '/results/$searchId': typeof AuthenticatedResultsSearchIdRoute
   '/api/public/results': typeof ApiPublicResultsRoute
@@ -99,11 +106,12 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
-  '/auth': typeof AuthRoute
+  '/auth': typeof AuthRouteWithChildren
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/history': typeof AuthenticatedHistoryRoute
   '/search': typeof AuthenticatedSearchRoute
   '/settings': typeof AuthenticatedSettingsRoute
+  '/auth/callback': typeof AuthCallbackRoute
   '/admin/logs': typeof AuthenticatedAdminLogsRoute
   '/results/$searchId': typeof AuthenticatedResultsSearchIdRoute
   '/api/public/results': typeof ApiPublicResultsRoute
@@ -114,11 +122,12 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/_authenticated': typeof AuthenticatedRouteWithChildren
-  '/auth': typeof AuthRoute
+  '/auth': typeof AuthRouteWithChildren
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
   '/_authenticated/history': typeof AuthenticatedHistoryRoute
   '/_authenticated/search': typeof AuthenticatedSearchRoute
   '/_authenticated/settings': typeof AuthenticatedSettingsRoute
+  '/auth/callback': typeof AuthCallbackRoute
   '/_authenticated/admin/logs': typeof AuthenticatedAdminLogsRoute
   '/_authenticated/results/$searchId': typeof AuthenticatedResultsSearchIdRoute
   '/api/public/results': typeof ApiPublicResultsRoute
@@ -134,6 +143,7 @@ export interface FileRouteTypes {
     | '/history'
     | '/search'
     | '/settings'
+    | '/auth/callback'
     | '/admin/logs'
     | '/results/$searchId'
     | '/api/public/results'
@@ -147,6 +157,7 @@ export interface FileRouteTypes {
     | '/history'
     | '/search'
     | '/settings'
+    | '/auth/callback'
     | '/admin/logs'
     | '/results/$searchId'
     | '/api/public/results'
@@ -161,6 +172,7 @@ export interface FileRouteTypes {
     | '/_authenticated/history'
     | '/_authenticated/search'
     | '/_authenticated/settings'
+    | '/auth/callback'
     | '/_authenticated/admin/logs'
     | '/_authenticated/results/$searchId'
     | '/api/public/results'
@@ -171,7 +183,7 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AuthenticatedRoute: typeof AuthenticatedRouteWithChildren
-  AuthRoute: typeof AuthRoute
+  AuthRoute: typeof AuthRouteWithChildren
   ApiPublicResultsRoute: typeof ApiPublicResultsRoute
   ApiPublicStartSearchRoute: typeof ApiPublicStartSearchRoute
   ApiPublicHooksScheduledTaskRoute: typeof ApiPublicHooksScheduledTaskRoute
@@ -227,6 +239,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/settings'
       preLoaderRoute: typeof AuthenticatedSettingsRouteImport
       parentRoute: typeof AuthenticatedRoute
+    }
+    '/auth/callback': {
+      id: '/auth/callback'
+      path: '/callback'
+      fullPath: '/auth/callback'
+      preLoaderRoute: typeof AuthCallbackRouteImport
+      parentRoute: typeof AuthRoute
     }
     '/_authenticated/admin/logs': {
       id: '/_authenticated/admin/logs'
@@ -288,10 +307,20 @@ const AuthenticatedRouteWithChildren = AuthenticatedRoute._addFileChildren(
   AuthenticatedRouteChildren,
 )
 
+interface AuthRouteChildren {
+  AuthCallbackRoute: typeof AuthCallbackRoute
+}
+
+const AuthRouteChildren: AuthRouteChildren = {
+  AuthCallbackRoute: AuthCallbackRoute,
+}
+
+const AuthRouteWithChildren = AuthRoute._addFileChildren(AuthRouteChildren)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AuthenticatedRoute: AuthenticatedRouteWithChildren,
-  AuthRoute: AuthRoute,
+  AuthRoute: AuthRouteWithChildren,
   ApiPublicResultsRoute: ApiPublicResultsRoute,
   ApiPublicStartSearchRoute: ApiPublicStartSearchRoute,
   ApiPublicHooksScheduledTaskRoute: ApiPublicHooksScheduledTaskRoute,
