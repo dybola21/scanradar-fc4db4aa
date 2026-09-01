@@ -16,11 +16,35 @@ export default function PwaManager() {
 
   useEffect(() => {
     if (!("serviceWorker" in navigator)) return;
-    const register = () => {
-      navigator.serviceWorker.register("/sw.js").catch(() => undefined);
+    const register = async () => {
+      if (import.meta.env.DEV) {
+        const registrations = await navigator.serviceWorker.getRegistrations();
+        const hadRegistration = registrations.length > 0;
+        await Promise.all(registrations.map((registration) => registration.unregister()));
+
+        if ("caches" in window) {
+          const cacheNames = await caches.keys();
+          await Promise.all(
+            cacheNames
+              .filter((name) => name.startsWith("scanradar-"))
+              .map((name) => caches.delete(name)),
+          );
+        }
+
+        if (hadRegistration && !sessionStorage.getItem("scanradar:dev-cache-reset")) {
+          sessionStorage.setItem("scanradar:dev-cache-reset", "1");
+          window.location.reload();
+        }
+        return;
+      }
+
+      navigator.serviceWorker
+        .register("/sw.js", { updateViaCache: "none" })
+        .then((registration) => registration.update())
+        .catch(() => undefined);
     };
-    if (document.readyState === "complete") register();
-    else window.addEventListener("load", register, { once: true });
+    if (document.readyState === "complete") void register();
+    else window.addEventListener("load", () => void register(), { once: true });
   }, []);
 
   useEffect(() => {

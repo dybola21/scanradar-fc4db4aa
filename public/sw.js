@@ -1,5 +1,5 @@
-/* ScanRadar service worker — offline shell + runtime caching */
-const VERSION = "scanradar-v1";
+/* ScanRadar service worker — offline shell + safe production asset caching */
+const VERSION = "scanradar-v2";
 const SHELL = ["/icons/icon-192.png", "/icons/icon-512.png", "/manifest.webmanifest"];
 
 self.addEventListener("install", (event) => {
@@ -27,8 +27,20 @@ self.addEventListener("fetch", (event) => {
 
   const url = new URL(request.url);
   if (url.origin !== self.location.origin) return;
-  // Never cache API/auth traffic.
-  if (url.pathname.startsWith("/api/") || url.pathname.startsWith("/_serverFn")) return;
+  // Never intercept API/auth traffic or Vite/TanStack development modules.
+  // Caching transformed /src modules leaves them pointing at dependency chunks
+  // that Vite may replace, causing "Failed to fetch dynamically imported module".
+  if (
+    url.pathname.startsWith("/api/") ||
+    url.pathname.startsWith("/_serverFn") ||
+    url.pathname.startsWith("/src/") ||
+    url.pathname.startsWith("/node_modules/") ||
+    url.pathname.startsWith("/@") ||
+    url.pathname.startsWith("/__") ||
+    url.searchParams.has("tsr-split") ||
+    url.searchParams.has("t") ||
+    url.searchParams.has("v")
+  ) return;
 
   // Navigations: network first, offline fallback to cached page.
   if (request.mode === "navigate") {
@@ -44,7 +56,14 @@ self.addEventListener("fetch", (event) => {
     return;
   }
 
-  // Static assets: cache first.
+  // Cache only stable public files and production's content-hashed assets.
+  const isCacheableAsset =
+    url.pathname.startsWith("/assets/") ||
+    url.pathname.startsWith("/icons/") ||
+    url.pathname === "/manifest.webmanifest" ||
+    url.pathname === "/favicon.png";
+  if (!isCacheableAsset) return;
+
   event.respondWith(
     caches.match(request).then((cached) => {
       if (cached) return cached;
