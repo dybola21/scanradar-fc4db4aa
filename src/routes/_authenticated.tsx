@@ -6,12 +6,13 @@ export const Route = createFileRoute("/_authenticated")({
   ssr: false,
   beforeLoad: async () => {
     const {
-      data: { session },
-    } = await supabase.auth.getSession();
-    if (!session) {
+      data: { user },
+      error,
+    } = await supabase.auth.getUser();
+    if (error || !user) {
       throw redirect({ to: "/auth" });
     }
-    return { session };
+    return { user };
   },
   component: DashboardLayout,
 });

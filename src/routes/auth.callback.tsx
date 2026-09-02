@@ -11,6 +11,8 @@ export const Route = createFileRoute("/auth/callback")({
       { name: "robots", content: "noindex" },
       { property: "og:title", content: "Entrando… — ScanRadar" },
       { property: "og:description", content: "Finalizando o login no ScanRadar." },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
     ],
   }),
   component: AuthCallback,
@@ -21,31 +23,51 @@ function AuthCallback() {
   const [message, setMessage] = useState("Finalizando login…");
 
   useEffect(() => {
+    let active = true;
     let done = false;
+    let retryTimer: ReturnType<typeof setTimeout> | undefined;
+
     const go = () => {
-      if (done) return;
+      if (!active || done) return;
       done = true;
       navigate({ to: "/dashboard", replace: true });
     };
 
-    const { data: sub } = supabase.auth.onAuthStateChange((_event, session) => {
-      if (session) go();
-    });
+    const validateSession = async (attempt = 0) => {
+      if (!active || done) return;
 
-    supabase.auth.getSession().then(({ data }) => {
-      if (data.session) go();
-    });
-
-    const timeout = setTimeout(() => {
-      if (!done) {
-        setMessage("Não foi possível concluir o login. Redirecionando…");
-        navigate({ to: "/auth", replace: true });
+      const { data, error } = await supabase.auth.getUser();
+      if (data.user) {
+        go();
+        return;
       }
-    }, 8000);
+
+      if (attempt < 7) {
+        retryTimer = setTimeout(() => void validateSession(attempt + 1), 500);
+        return;
+      }
+
+      const params = new URLSearchParams(`${window.location.search}&${window.location.hash.slice(1)}`);
+      const oauthError = params.get("error_description") ?? params.get("error");
+      setMessage(oauthError || error?.message || "Não foi possível concluir o login. Tente novamente.");
+      setTimeout(() => {
+        if (active) navigate({ to: "/auth", replace: true });
+      }, 2500);
+    };
+
+    const { data: sub } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (session?.access_token) void validateSession();
+    });
+
+    // The mobile/PWA redirect can arrive before the auth client finishes
+    // exchanging and persisting the callback tokens. getUser() waits for that
+    // initialization and verifies the resulting session with the auth server.
+    void validateSession();
 
     return () => {
+      active = false;
       sub.subscription.unsubscribe();
-      clearTimeout(timeout);
+      if (retryTimer) clearTimeout(retryTimer);
     };
   }, [navigate]);
 
