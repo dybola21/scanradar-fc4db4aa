@@ -264,10 +264,16 @@ export default function ResultsPage() {
 
   const copyContacts = async () => {
     const rows = selectedLeads.length ? selectedLeads : filtered;
-    const text = rows
-      .map((l) => [l.nome, l.telefone, l.email || l.email2].filter(Boolean).join(" | "))
-      .join("\n");
-    await navigator.clipboard.writeText(text);
+    const segmento = search?.termo ?? "";
+    const headers = ["Nome", "Telefone", "Email", "Cidade", "Segmento"];
+    const separator = ["---", "---", "---", "---", "---"];
+    const lines = rows.map((l) =>
+      [l.nome ?? "", l.telefone ?? "", l.email || l.email2 || "", l.cidade ?? "", segmento]
+        .map((c) => String(c).replace(/\|/g, "\\|"))
+        .join(" | "),
+    );
+    const table = [headers.join(" | "), separator.join(" | "), ...lines].join("\n");
+    await navigator.clipboard.writeText(table);
     toast.success(`${rows.length} contatos copiados.`);
   };
 
