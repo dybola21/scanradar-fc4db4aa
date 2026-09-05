@@ -273,8 +273,8 @@ export default function ResultsPage() {
       const cidadeUf = cidade && uf ? `${cidade} - ${uf}` : cidade || uf;
       return [l.nome ?? "", l.telefone ?? "", l.email || l.email2 || "", cidadeUf, segmento]
         .map((c) => String(c).replace(/\|/g, "\\|"))
-        .join(" | "),
-    );
+        .join(" | ");
+    });
     const table = [headers.join(" | "), separator.join(" | "), ...lines].join("\n");
     await navigator.clipboard.writeText(table);
     toast.success(`${rows.length} contatos copiados.`);
