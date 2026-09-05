@@ -267,11 +267,14 @@ export default function ResultsPage() {
     const segmento = search?.termo ?? "";
     const headers = ["Nome", "Telefone", "Email", "Cidade", "Segmento"];
     const separator = ["---", "---", "---", "---", "---"];
-    const lines = rows.map((l) =>
-      [l.nome ?? "", l.telefone ?? "", l.email || l.email2 || "", l.cidade || search?.cidade || "", segmento]
+    const lines = rows.map((l) => {
+      const cidade = l.cidade || search?.cidade || "";
+      const uf = l.uf || search?.uf || "";
+      const cidadeUf = cidade && uf ? `${cidade} - ${uf}` : cidade || uf;
+      return [l.nome ?? "", l.telefone ?? "", l.email || l.email2 || "", cidadeUf, segmento]
         .map((c) => String(c).replace(/\|/g, "\\|"))
-        .join(" | "),
-    );
+        .join(" | ");
+    });
     const table = [headers.join(" | "), separator.join(" | "), ...lines].join("\n");
     await navigator.clipboard.writeText(table);
     toast.success(`${rows.length} contatos copiados.`);
