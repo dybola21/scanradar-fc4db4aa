@@ -9,7 +9,6 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { ArrowRight, Eye, EyeOff, CheckCircle2 } from "lucide-react";
-import { lovable } from "@/integrations/lovable/index";
 import { ScanRadarLogo } from "./ScanRadarLogo";
 import { AnimatedRadarScene } from "./AnimatedRadarScene";
 
@@ -32,7 +31,6 @@ export default function AuthPage() {
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const [isGoogleLoading, setIsGoogleLoading] = useState(false);
   const [isSignUp, setIsSignUp] = useState(false);
   const navigate = useNavigate();
   const logEventFn = useServerFn(logScanEvent);
@@ -99,24 +97,7 @@ export default function AuthPage() {
     }
   };
 
-  const handleGoogleSignIn = async () => {
-    if (isGoogleLoading) return;
-    setIsGoogleLoading(true);
-    try {
-      const result = await lovable.auth.signInWithOAuth("google", {
-        redirect_uri: `${window.location.origin}/auth/callback`,
-      });
-      if (result.error) throw result.error;
-      if (result.redirected) return;
-      navigate({ to: "/auth/callback" });
-    } catch (error: any) {
-      toast.error(error?.message ?? "Não foi possível entrar com o Google.");
-    } finally {
-      setIsGoogleLoading(false);
-    }
-  };
-
-  const busy = isLoading || isGoogleLoading;
+  const busy = isLoading;
 
   return (
     <div className="flex min-h-dvh w-full overflow-hidden bg-[#07111F]">
