@@ -268,7 +268,7 @@ export default function ResultsPage() {
     const headers = ["Nome", "Telefone", "Email", "Cidade", "Segmento"];
     const separator = ["---", "---", "---", "---", "---"];
     const lines = rows.map((l) =>
-      [l.nome ?? "", l.telefone ?? "", l.email || l.email2 || "", l.cidade ?? "", segmento]
+      [l.nome ?? "", l.telefone ?? "", l.email || l.email2 || "", l.cidade || search?.cidade || "", segmento]
         .map((c) => String(c).replace(/\|/g, "\\|"))
         .join(" | "),
     );
