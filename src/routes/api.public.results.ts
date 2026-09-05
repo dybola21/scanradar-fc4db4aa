@@ -68,7 +68,7 @@ export const Route = createFileRoute('/api/public/results')({
           // Get the search record to verify the callback secret
           const { data: search, error: searchError } = await supabaseAdmin
             .from('searches')
-            .select('user_id')
+            .select('user_id, cidade, uf')
             .eq('id', searchId)
             .maybeSingle()
 
@@ -170,8 +170,8 @@ export const Route = createFileRoute('/api/public/results')({
               endereco: lead.address || lead.endereco,
               website: lead.website,
               bairro: lead.bairro,
-              cidade: lead.cidade,
-              uf: lead.uf,
+              cidade: lead.cidade || search.cidade || null,
+              uf: lead.uf || search.uf || null,
               email: lead.email,
               email2: lead.email2
             });
